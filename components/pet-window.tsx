@@ -171,6 +171,9 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [showFloatingWidget, setShowFloatingWidget] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [companionVisible, setCompanionVisible] = useState(() =>
+    typeof window !== "undefined" ? (searchParams?.get?.("companionVisible") === "1") : false
+  );
   const settingsMenuRef = useRef<HTMLDivElement>(null);
   const hasLoadedSave = useRef(false);
 
@@ -189,6 +192,15 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
     if (showSettingsMenu) document.addEventListener("click", close);
     return () => document.removeEventListener("click", close);
   }, [showSettingsMenu]);
+
+  // 擴充 popup 傳來陪伴模式狀態：由 parent 的 postMessage 更新（關閉陪伴時會送 COMPANION_STATE）
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type === "COMPANION_STATE" && typeof e.data.visible === "boolean") setCompanionVisible(e.data.visible);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   // Load saved progress once on mount（與 embed 共用同一 stateKey，數值一致）
   useEffect(() => {
@@ -595,10 +607,19 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
               {typeof window !== "undefined" && window.self !== window.top && (
                 <button
                   type="button"
-                  className="px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-primary/20 hover:text-primary text-muted-foreground"
+                  className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                    companionVisible
+                      ? "bg-orange-500 text-white hover:bg-orange-600"
+                      : "hover:bg-primary/20 hover:text-primary text-muted-foreground"
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    try { window.parent.postMessage({ type: "OPEN_COMPANION" }, "*"); } catch (_) {}
+                    try {
+                      window.parent.postMessage(
+                        { type: companionVisible ? "CLOSE_COMPANION" : "OPEN_COMPANION" },
+                        "*"
+                      );
+                    } catch (_) {}
                   }}
                   title={t("petWindow.widgetTitle")}
                 >
