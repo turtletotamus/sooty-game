@@ -168,6 +168,8 @@ export function SootSprite({
 }: SootSpriteProps) {
   const controls = useAnimation();
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastClickTimeRef = useRef<number>(0);
+  const [clickTrigger, setClickTrigger] = useState(0);
   const [blinkState, setBlinkState] = useState(false);
   const [idleState, setIdleState] = useState<"normal" | "yawning" | "corner">("normal");
   const [lastInteractionTime, setLastInteractionTime] = useState(Date.now());
@@ -283,22 +285,23 @@ export function SootSprite({
     }
   }, [currentAction]);
 
-  // Squash and stretch on click
+  // Squash and stretch on click; jump animation is coordinated in the idle useEffect via lastClickTimeRef
   const handleClick = useCallback(() => {
     setLastInteractionTime(Date.now());
+    lastClickTimeRef.current = Date.now();
+    setClickTrigger((t) => t + 1);
     setIdleState("normal");
-    
-    squashY.set(0.7);
-    squashX.set(1.3);
+    // 壓扁 → 拉高 → 落回，時長與 ease 讓落地與後續 idle 銜接順暢
+    squashY.set(0.72);
+    squashX.set(1.28);
     setTimeout(() => {
-      squashY.set(1.15);
-      squashX.set(0.85);
+      squashY.set(1.12);
+      squashX.set(0.88);
       setTimeout(() => {
         squashY.set(1);
         squashX.set(1);
-      }, 100);
-    }, 100);
-    
+      }, 180);
+    }, 120);
     onClick();
   }, [onClick, squashX, squashY]);
 
@@ -359,18 +362,38 @@ export function SootSprite({
         transition: { duration: 1, ease: "easeOut" },
       });
     } else {
-      // Idle: gentle float up/down + slight horizontal drift (飄來飄去)
-      controls.start({
+      // Idle: 若剛點擊過，先播一次「跳起→落回」再接上飄動，避免跳躍與原本姿態銜接不順
+      const now = Date.now();
+      const justClicked = lastClickTimeRef.current && now - lastClickTimeRef.current < 650;
+      const idleKeyframes = {
         x: [0, 3, -2, 2, 0],
         y: [0, -8, -4, -6, 0],
         rotate: [0, 1, -1, 0],
         scale: 1,
         scaleX: 1,
         scaleY: 1,
-        transition: { duration: 3.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" },
-      });
+        transition: { duration: 3.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" as const },
+      };
+      if (justClicked) {
+        lastClickTimeRef.current = 0;
+        controls
+          .start(
+            {
+              x: 0,
+              y: [0, -22, 0],
+              scale: 1,
+              scaleX: 1,
+              scaleY: 1,
+              rotate: 0,
+              transition: { duration: 0.52, ease: [0.22, 0.61, 0.36, 1] },
+            },
+            { onComplete: () => controls.start(idleKeyframes) }
+          );
+        return;
+      }
+      controls.start(idleKeyframes);
     }
-  }, [emotion, currentAction, idleState, controls]);
+  }, [emotion, currentAction, idleState, clickTrigger, controls]);
 
   // Render eyes: sleeping = closed; sorrow = crying (sad curve + tears); else default eyes
   const renderEyes = () => {
