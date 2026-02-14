@@ -668,117 +668,95 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
         className={`w-full max-w-sm mx-auto ${isInPopup ? "h-full max-h-[100vh] overflow-hidden flex flex-col min-h-0" : ""}`}
       >
         <Card className={`flex flex-col min-h-0 ${isInPopup ? "border-0 shadow-none rounded-none outline-none ring-0 bg-[#f0f0f0] dark:bg-[#1a1a1a] max-h-[100vh] flex-1 overflow-hidden min-h-0" : "border-0 shadow-2xl bg-card/95 backdrop-blur"} ${!isInPopup && isOverflowing ? "overflow-visible" : "overflow-hidden"}`}>
-          {/* Window Title Bar */}
-          <div className={`bg-secondary/50 flex items-center justify-between border-b border-border/50 shrink-0 ${isInPopup ? "px-2 py-1.5" : "px-4 py-2"}`}>
-            <div className="flex items-center gap-2">
-              <Sparkles className={isInPopup ? "w-3 h-3 text-primary" : "w-4 h-4 text-primary"} />
-              <span className={isInPopup ? "text-xs font-medium text-foreground" : "text-sm font-medium text-foreground"}>{t("petWindow.windowTitle")}</span>
-              <span className="text-[10px] font-normal text-muted-foreground">v{APP_VERSION}</span>
-            </div>
-            <div className="relative flex items-center gap-1" ref={settingsMenuRef}>
-              {typeof window !== "undefined" && window.self !== window.top && (
-                <button
-                  type="button"
-                  className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                    companionVisible
-                      ? "bg-orange-500 text-white hover:bg-orange-600"
-                      : "hover:bg-primary/20 hover:text-primary text-muted-foreground"
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    try {
-                      window.parent.postMessage(
-                        { type: companionVisible ? "CLOSE_COMPANION" : "OPEN_COMPANION" },
-                        "*"
-                      );
-                    } catch (_) {}
-                  }}
-                  title={t("petWindow.widgetTitle")}
-                >
-                  {t("petWindow.widget")}
-                </button>
-              )}
-              <button
-                type="button"
-                className={`p-1 rounded transition-colors ${showSettingsMenu ? "bg-primary/20 text-primary" : "hover:bg-muted text-muted-foreground"}`}
-                onClick={(e) => { e.stopPropagation(); setShowSettingsMenu((v) => !v); }}
-                title="Settings"
-              >
-                <Settings className="w-3 h-3" />
-              </button>
-              {showSettingsMenu && (
-                <div className="absolute top-full right-0 mt-1 py-1 min-w-[160px] bg-card border border-border rounded-lg shadow-lg z-50 flex flex-col">
-                  <div className="px-3 py-2 border-b border-border/50 text-[10px] font-medium text-muted-foreground uppercase">Settings</div>
-                  <div className="px-3 py-2 text-sm hover:bg-muted" onClick={(e) => e.stopPropagation()}>
-                    <ThemeToggle labelWhenDark={t("petWindow.darkMode")} labelWhenLight={t("petWindow.lightMode")} />
-                  </div>
-                  <button type="button" className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted rounded-none" onClick={() => { setIsCustomizerOpen(true); setShowSettingsMenu(false); }}>
-                    <Shirt className="w-4 h-4 text-muted-foreground" />
-                    <span>{t("petWindow.appearanceLabel")}</span>
-                  </button>
-                  <button type="button" className={`flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted rounded-none ${showFloatingWidget ? "text-primary" : ""}`} onClick={() => { const next = !showFloatingWidget; setShowFloatingWidget(next); saveWidgetVisible(next); setShowSettingsMenu(false); }}>
-                    <LayoutGrid className="w-4 h-4" />
-                    <span>{t("petWindow.widget")}</span>
-                  </button>
-                  <div className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted" onClick={(e) => e.stopPropagation()}>
-                    <LanguageToggle />
-                  </div>
-                </div>
-              )}
-              <WhiteNoiseControl alignDropdownRight={isInPopup} />
-            </div>
-          </div>
-
-          {/* Character Info Header */}
-          <div className={`bg-secondary/30 border-b border-border/30 shrink-0 ${isInPopup ? "px-2 py-2" : "px-4 py-3"}`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+          {/* 頂部：單一標題列（寵物名 + 版本 + 操作）+ 精簡資訊列（年齡 · 心情） */}
+          <div className={`bg-secondary/50 border-b border-border/50 shrink-0 ${isInPopup ? "px-2 py-1" : "px-4 py-1.5"}`}>
+            {/* 第一行：左＝標題與版本，右＝Widget／設定／音樂 */}
+            <div className="flex items-center justify-between gap-2 min-h-8">
+              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <Sparkles className={isInPopup ? "w-3 h-3 shrink-0 text-primary" : "w-3.5 h-3.5 shrink-0 text-primary"} />
                 {isEditingName ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 min-w-0">
                     <Input
                       value={tempName}
                       onChange={(e) => setTempName(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleNameSave()}
-                      className="h-7 w-32 text-sm bg-background/50"
+                      className="h-6 w-28 text-xs bg-background/50 min-w-0"
                       maxLength={12}
                       autoFocus
                     />
                     <button
                       type="button"
                       onClick={handleNameSave}
-                      className="p-1 hover:bg-primary/20 rounded transition-colors"
+                      className="p-0.5 hover:bg-primary/20 rounded transition-colors shrink-0"
                     >
-                      <Check className="w-4 h-4 text-primary" />
+                      <Check className="w-3 h-3 text-primary" />
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-semibold text-foreground">{petName}</span>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <span className={isInPopup ? "text-xs font-semibold text-foreground truncate" : "text-sm font-semibold text-foreground truncate"}>{petName}</span>
                     <button
                       type="button"
-                      onClick={() => {
-                        setTempName(petName);
-                        setIsEditingName(true);
-                      }}
-                      className="p-1 hover:bg-muted rounded transition-colors opacity-60 hover:opacity-100"
+                      onClick={() => { setTempName(petName); setIsEditingName(true); }}
+                      className="p-0.5 hover:bg-muted rounded transition-colors opacity-60 hover:opacity-100 shrink-0"
                     >
                       <Pencil className="w-3 h-3 text-muted-foreground" />
                     </button>
                   </div>
                 )}
+                <span className="text-[10px] text-muted-foreground shrink-0">· v{APP_VERSION}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <span className="text-xs text-muted-foreground">{t("petWindow.age")}</span>
-                  <div className="text-sm font-medium text-foreground">{age}</div>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs text-muted-foreground">{t("petWindow.mood")}</span>
-                  <div className={`text-sm font-medium ${getEmotionColor()}`}>
-                    {getEmotionDisplay()}
+              <div className="relative flex items-center gap-0.5 shrink-0" ref={settingsMenuRef}>
+                {typeof window !== "undefined" && window.self !== window.top && (
+                  <button
+                    type="button"
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                      companionVisible ? "bg-orange-500 text-white hover:bg-orange-600" : "hover:bg-primary/20 hover:text-primary text-muted-foreground"
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      try { window.parent.postMessage({ type: companionVisible ? "CLOSE_COMPANION" : "OPEN_COMPANION" }, "*"); } catch (_) {}
+                    }}
+                    title={t("petWindow.widgetTitle")}
+                  >
+                    {t("petWindow.widget")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={`p-1 rounded transition-colors ${showSettingsMenu ? "bg-primary/20 text-primary" : "hover:bg-muted text-muted-foreground"}`}
+                  onClick={(e) => { e.stopPropagation(); setShowSettingsMenu((v) => !v); }}
+                  title="Settings"
+                >
+                  <Settings className="w-3 h-3" />
+                </button>
+                {showSettingsMenu && (
+                  <div className="absolute top-full right-0 mt-1 py-1 min-w-[160px] bg-card border border-border rounded-lg shadow-lg z-50 flex flex-col">
+                    <div className="px-3 py-2 border-b border-border/50 text-[10px] font-medium text-muted-foreground uppercase">Settings</div>
+                    <div className="px-3 py-2 text-sm hover:bg-muted" onClick={(e) => e.stopPropagation()}>
+                      <ThemeToggle labelWhenDark={t("petWindow.darkMode")} labelWhenLight={t("petWindow.lightMode")} />
+                    </div>
+                    <button type="button" className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted rounded-none" onClick={() => { setIsCustomizerOpen(true); setShowSettingsMenu(false); }}>
+                      <Shirt className="w-4 h-4 text-muted-foreground" />
+                      <span>{t("petWindow.appearanceLabel")}</span>
+                    </button>
+                    <button type="button" className={`flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted rounded-none ${showFloatingWidget ? "text-primary" : ""}`} onClick={() => { const next = !showFloatingWidget; setShowFloatingWidget(next); saveWidgetVisible(next); setShowSettingsMenu(false); }}>
+                      <LayoutGrid className="w-4 h-4" />
+                      <span>{t("petWindow.widget")}</span>
+                    </button>
+                    <div className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted" onClick={(e) => e.stopPropagation()}>
+                      <LanguageToggle />
+                    </div>
                   </div>
-                </div>
+                )}
+                <WhiteNoiseControl alignDropdownRight={isInPopup} />
               </div>
+            </div>
+            {/* 第二行：年齡 · 心情（精簡、小字） */}
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground pb-0.5">
+              <span>{t("petWindow.age")} {age}</span>
+              <span aria-hidden>·</span>
+              <span>{t("petWindow.mood")} <span className={getEmotionColor()}>{getEmotionDisplay()}</span></span>
             </div>
           </div>
 

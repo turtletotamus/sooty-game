@@ -43,14 +43,14 @@ export function BackgroundSoundDropdown({ alignDropdownRight = false }: Backgrou
           e.stopPropagation();
           setShowMenu((v) => !v);
         }}
-        className={`flex items-center justify-center p-1.5 rounded transition-colors ${
+        className={`flex items-center justify-center p-1 rounded transition-colors ${
           type !== "none"
             ? "bg-primary/20 text-primary hover:bg-primary/30"
             : "hover:bg-muted text-muted-foreground"
         }`}
         title={t("pomodoro.backgroundSound")}
       >
-        <BackgroundSoundIcon type={type} className="w-4 h-4" />
+        <BackgroundSoundIcon type={type} className="w-3 h-3" />
       </button>
       {showMenu && (
         <div
