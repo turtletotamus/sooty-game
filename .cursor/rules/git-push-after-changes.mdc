@@ -1,0 +1,15 @@
+---
+description: 改完程式後要 push；若沒 push 要主動說明原因
+globs: 
+alwaysApply: true
+---
+
+# 改完程式後的 Git Push
+
+1. **每次改完程式後要 push**
+   - 有改到的 repo 都要執行：`git add` → `git commit`（附清楚訊息）→ `git push`。
+   - 若專案拆成多個 repo（例如主站 sooty-game-main、擴充 sooty-extension），兩個都有改就兩個都 push；只改一個就只 push 那一個。
+
+2. **若沒有 push，要主動向使用者說明原因**
+   - 例如：該 repo 還沒設定 remote、需要你確認 commit 訊息或範圍、權限不足、不確定要 push 到哪個 branch 等。
+   - 不要讓使用者一直重新整理卻不知道為什麼沒 push，避免浪費時間。
