@@ -1,0 +1,25 @@
+---
+description: 每一版發佈時必須執行的流程
+globs: 
+alwaysApply: false
+---
+
+# 發佈新版本時的固定流程
+
+當完成一版改動、要上線時，**必須**依序執行：
+
+1. **自動更新版本號並記錄時間**
+   - 執行：`node scripts/bump-and-push.js`
+   - 腳本會：
+     - 主站：`lib/version.ts`、`package.json` 的 version 往上加一（patch）
+     - 擴充：`chrome-extension/manifest.json` 的 version 往上加一
+     - 在 `lib/version.ts` 寫入 `RELEASE_TIME`（精準到 **幾點幾分**，格式 `YYYY-MM-DD HH:mm`）
+
+2. **自動 push**
+   - 同一個腳本會自動 `git add` → `git commit -m "chore: release vX.Y.Z (YYYY-MM-DD HH:mm)"` → `git push`
+
+因此：**每次要發佈一版時，只要執行一次 `node scripts/bump-and-push.js` 即可**，不需手動改版本號或手動 push。
+
+若要 bump minor/major，可執行：
+- `node scripts/bump-and-push.js minor`
+- `node scripts/bump-and-push.js major`
