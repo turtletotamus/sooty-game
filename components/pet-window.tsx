@@ -22,6 +22,7 @@ import { WhiteNoiseControl } from "@/components/white-noise-control";
 import type { SootAppearance } from "@/components/soot-sprite";
 import { getSizeMultiplier, SOOT_BASE_SIZE } from "@/components/soot-sprite";
 import { APP_VERSION } from "@/lib/version";
+import { getStateKey, loadState, saveState as persistState } from "@/lib/sooty-state";
 
 interface PetState {
   hunger: number;
@@ -80,7 +81,6 @@ function getWalkSceneBg(scene: WalkScene): string {
   }
 }
 
-const SAVED_STATE_KEY = "sooty-game-state";
 const WIDGET_VISIBLE_KEY = "sooty-widget-visible";
 
 function loadWidgetVisible(): boolean {
@@ -102,48 +102,22 @@ function saveWidgetVisible(visible: boolean) {
   }
 }
 
-function loadSavedState(): {
-  petName: string;
-  age: number;
-  petState: PetState;
-  appearance: SootAppearance;
-} | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(SAVED_STATE_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw) as unknown;
-    if (!data || typeof data !== "object") return null;
-    const o = data as Record<string, unknown>;
-    const petName = typeof o.petName === "string" ? o.petName : "Sooty";
-    const age = typeof o.age === "number" && o.age >= 1 ? o.age : 1;
-    const ps = o.petState as Record<string, unknown> | undefined;
-    const petState: PetState = {
-      hunger: typeof ps?.hunger === "number" ? Math.min(MAX_STAT, Math.max(0, ps.hunger)) : 80,
-      thirst: typeof ps?.thirst === "number" ? Math.min(MAX_STAT, Math.max(0, ps.thirst)) : 85,
-      happiness: typeof ps?.happiness === "number" ? Math.min(MAX_STAT, Math.max(0, ps.happiness)) : 90,
-      energy: typeof ps?.energy === "number" ? Math.min(MAX_STAT, Math.max(0, ps.energy)) : 95,
-    };
-    const a = o.appearance as Record<string, unknown> | undefined;
-    const shape = (a?.shape as SootAppearance["shape"]) ?? "circle";
-    const color = typeof a?.color === "string" ? a.color : "#2a2a2a";
-    const appearance: SootAppearance = { shape, color };
-    return { petName, age, petState, appearance };
-  } catch {
-    return null;
-  }
-}
-
-function saveState(petName: string, age: number, petState: PetState, appearance: SootAppearance) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(
-      SAVED_STATE_KEY,
-      JSON.stringify({ petName, age, petState, appearance })
-    );
-  } catch {
-    // ignore
-  }
+function saveState(
+  key: string,
+  petName: string,
+  age: number,
+  petState: PetState,
+  appearance: SootAppearance,
+  lastInteractionTime: number
+) {
+  persistState(key, {
+    petName,
+    age,
+    petState,
+    appearance,
+    lastSavedAt: Date.now(),
+    lastInteractionTime,
+  });
 }
 
 const defaultPetState: PetState = {
@@ -158,6 +132,8 @@ const defaultAppearance: SootAppearance = { shape: "circle", color: "#2a2a2a" };
 export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
+  const sootyId = searchParams?.get?.("sootyId") ?? undefined;
+  const stateKey = getStateKey(sootyId);
   const maxSizeScale = (() => {
     try {
       const raw = searchParams?.get?.("maxSize");
@@ -214,25 +190,26 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
     return () => document.removeEventListener("click", close);
   }, [showSettingsMenu]);
 
-  // Load saved progress once on mount
+  // Load saved progress once on mount（與 embed 共用同一 stateKey，數值一致）
   useEffect(() => {
     if (hasLoadedSave.current) return;
     hasLoadedSave.current = true;
-    const saved = loadSavedState();
+    const saved = loadState(stateKey);
     if (saved) {
       setPetName(saved.petName);
       setTempName(saved.petName);
       setAge(saved.age);
       setPetState(saved.petState);
       setAppearance(saved.appearance);
+      setLastInteractionTime(saved.lastInteractionTime);
     }
     setShowFloatingWidget(loadWidgetVisible());
-  }, []);
+  }, [stateKey]);
 
   // Persist progress when key state changes
   useEffect(() => {
-    saveState(petName, age, petState, appearance);
-  }, [petName, age, petState, appearance]);
+    saveState(stateKey, petName, age, petState, appearance, lastInteractionTime);
+  }, [stateKey, petName, age, petState, appearance, lastInteractionTime]);
 
   // Walk mode (inline DEMO)
   const [isWalking, setIsWalking] = useState(false);

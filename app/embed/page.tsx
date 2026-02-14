@@ -1,19 +1,18 @@
 "use client";
 
 import { Suspense } from "react";
-import { PetWindow } from "@/components/pet-window";
+import { EmbedCharacterOnly } from "@/components/embed-character-only";
 
 /**
- * Embed / popup view: only the pet window, no title, no footer, no tagline.
- * Used by Chrome extension popup and iframes.
- * URL params: ?maxSize=0.8 (cap character size to 80%), ?sootyId=... (for same pet across tabs).
+ * 右下角陪伴模式：只顯示一隻小黑炭，與主視窗同一份 state（sootyId），表情一致；點擊會跳一下。
+ * URL params: ?sootyId=...（與主視窗共用）, ?maxSize=0.8（可選）
  */
 export default function EmbedPage() {
   return (
-    <main className="min-h-screen min-w-[320px] bg-background flex items-center justify-center p-0">
-      <div className="w-full max-w-sm">
-        <Suspense fallback={<div className="min-h-[300px] flex items-center justify-center text-muted-foreground">...</div>}>
-          <PetWindow embedMode />
+    <main className="min-h-screen min-w-[120px] bg-transparent flex items-center justify-center p-0">
+      <div className="w-full h-full min-h-[200px] flex items-center justify-center">
+        <Suspense fallback={<div className="min-h-[200px] flex items-center justify-center text-muted-foreground">...</div>}>
+          <EmbedCharacterOnly />
         </Suspense>
       </div>
     </main>
