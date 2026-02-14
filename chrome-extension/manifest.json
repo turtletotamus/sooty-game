@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Sooty (小黑炭)",
-  "description": "你的桌面小夥伴，在任何網頁右下角都能陪著你。",
-  "version": "1.0.0",
+  "description": "點圖示打開小黑炭視窗；右下角陪伴模式為同一隻小黑炭。",
+  "version": "1.0.1",
   "permissions": ["storage"],
   "action": {
     "default_popup": "popup.html",

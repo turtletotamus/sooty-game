@@ -1,26 +1,59 @@
 /**
- * Popup：開關「在每個網頁顯示」、開啟完整版連結
+ * Popup = 小黑炭視窗本體（主站 iframe）+ 聆聽 iframe 發出的「陪伴模式」開/關
  */
-
-const STORAGE_KEY = 'widgetVisible';
 const EMBED_URL = typeof SOOTY_EMBED_URL !== 'undefined' ? SOOTY_EMBED_URL : 'http://localhost:3000/embed';
 const FULL_URL = EMBED_URL.replace(/\/embed\/?$/, '') || 'http://localhost:3000';
+const COMPANION_VISIBLE_KEY = 'sootyCompanionVisible';
+const SOOTY_APPEARANCE_KEY = 'sootyAppearance';
+var sootyFrame = document.getElementById('sooty-frame');
 
-const toggleEl = document.getElementById('toggle');
-const openFullEl = document.getElementById('openFull');
+function setFrameSrc(sootyId, companionVisible) {
+  var url = FULL_URL + '?sootyId=' + encodeURIComponent(sootyId);
+  if (companionVisible) url += '&companionVisible=1';
+  sootyFrame.src = url;
+}
 
-openFullEl.href = FULL_URL;
-
-chrome.storage.local.get([STORAGE_KEY], function (result) {
-  const on = result[STORAGE_KEY] !== false;
-  toggleEl.classList.toggle('on', on);
-  toggleEl.setAttribute('aria-pressed', on ? 'true' : 'false');
+chrome.storage.local.get(['sootyId', COMPANION_VISIBLE_KEY], function (r) {
+  var id = r.sootyId;
+  var companionVisible = !!r[COMPANION_VISIBLE_KEY];
+  if (!id) {
+    id = 'sooty-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36);
+    chrome.storage.local.set({ sootyId: id }, function () {
+      setFrameSrc(id, companionVisible);
+    });
+  } else {
+    setFrameSrc(id, companionVisible);
+  }
 });
 
-toggleEl.addEventListener('click', function () {
-  const isOn = toggleEl.classList.toggle('on');
-  toggleEl.setAttribute('aria-pressed', isOn ? 'true' : 'false');
-  chrome.storage.local.set({ [STORAGE_KEY]: isOn }, function () {
-    // 通知已開啟的分頁更新（content script 會聽 storage.onChanged）
+// 取得「使用者正在看的那個分頁」（按陪伴模式時要讓小黑炭出現在該分頁）
+// 彈出 popup 時 currentWindow 可能是 popup 本身，故改為取所有視窗的 active tab，再選 normal 視窗的那一個
+function getActiveBrowserTab(cb) {
+  chrome.tabs.query({ active: true }, function (tabs) {
+    if (!tabs.length) return cb(null);
+    var normalTab = tabs.filter(function (t) { return t.id != null && t.url && !t.url.startsWith('chrome://'); })[0];
+    cb(normalTab || tabs[0]);
   });
+}
+
+window.addEventListener('message', function (e) {
+  if (!e.data || !e.data.type) return;
+  if (e.data.type === 'OPEN_COMPANION') {
+    getActiveBrowserTab(function (tab) {
+      if (tab) chrome.tabs.sendMessage(tab.id, 'showCompanion').catch(function () {});
+      window.close();
+    });
+  }
+  if (e.data.type === 'CLOSE_COMPANION') {
+    getActiveBrowserTab(function (tab) {
+      if (tab) chrome.tabs.sendMessage(tab.id, 'hideCompanion').catch(function () {});
+      chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: false }, function () {
+        try { sootyFrame.contentWindow.postMessage({ type: 'COMPANION_STATE', visible: false }, '*'); } catch (_) {}
+      });
+    });
+  }
+  if (e.data.type === 'SOOTY_APPEARANCE' && e.data.appearance) {
+    var app = e.data.appearance;
+    if (app.shape && app.color) chrome.storage.local.set({ [SOOTY_APPEARANCE_KEY]: { shape: app.shape, color: app.color } });
+  }
 });

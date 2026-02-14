@@ -1,117 +1,142 @@
 /**
- * Content script: 在所有網頁右下角注入小黑炭 iframe（當「在每個網頁顯示」為開啟時）
+ * 陪伴模式：在「一般網頁」右下角固定顯示同一隻小黑炭（embed），不超出螢幕。
+ * 僅在「平常瀏覽的網頁」（如 Google、一般網站）顯示；若目前就在小黑炭主站／embed 頁面，則不顯示，避免出現在「小黑炭視窗的右下角」。
  */
-
 (function () {
-  const STORAGE_KEY = 'widgetVisible';
+  const SOOTY_ID_KEY = 'sootyId';
+  const COMPANION_VISIBLE_KEY = 'sootyCompanionVisible';
+  const SOOTY_APPEARANCE_KEY = 'sootyAppearance';
   const CONTAINER_ID = 'sooty-extension-root';
-  const EMBED_URL = typeof SOOTY_EMBED_URL !== 'undefined' ? SOOTY_EMBED_URL : 'http://localhost:3000/embed';
+  const EMBED_URL = typeof SOOTY_EMBED_URL !== 'undefined' ? SOOTY_EMBED_URL : 'https://sooty-game.vercel.app/embed';
+
+  function isSootyPage() {
+    try {
+      var embedOrigin = new URL(EMBED_URL).origin;
+      return window.location.origin === embedOrigin;
+    } catch (e) {
+      return false;
+    }
+  }
 
   function getContainer() {
     return document.getElementById(CONTAINER_ID);
   }
 
+  function ensureSootyId(cb) {
+    chrome.storage.local.get([SOOTY_ID_KEY], function (result) {
+      var id = result[SOOTY_ID_KEY];
+      if (!id) {
+        id = 'sooty-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36);
+        chrome.storage.local.set({ [SOOTY_ID_KEY]: id }, function () { cb(id); });
+      } else {
+        cb(id);
+      }
+    });
+  }
+
+  function buildEmbedUrl(sootyId, appearance) {
+    var url = new URL(EMBED_URL);
+    url.searchParams.set('sootyId', sootyId);
+    url.searchParams.set('maxSize', '0.8');
+    if (appearance && appearance.shape) url.searchParams.set('shape', appearance.shape);
+    if (appearance && appearance.color) url.searchParams.set('color', appearance.color);
+    return url.toString();
+  }
+
   function createWidget() {
     if (getContainer()) return;
 
-    const wrap = document.createElement('div');
+    var wrap = document.createElement('div');
     wrap.id = CONTAINER_ID;
 
-    const style = document.createElement('style');
-    style.textContent = `
-      #${CONTAINER_ID} {
-        position: fixed !important;
-        bottom: 0 !important;
-        right: 0 !important;
-        width: 320px !important;
-        height: 420px !important;
-        z-index: 2147483646 !important;
-        border: none !important;
-        box-shadow: 0 0 24px rgba(0,0,0,0.15) !important;
-        border-radius: 12px 0 0 0 !important;
-        overflow: hidden !important;
-        font-family: system-ui, sans-serif !important;
-      }
-      #${CONTAINER_ID} iframe {
-        width: 100% !important;
-        height: 100% !important;
-        border: none !important;
-        display: block !important;
-      }
-      #${CONTAINER_ID} .sooty-hide {
-        position: absolute !important;
-        top: 4px !important;
-        right: 4px !important;
-        width: 24px !important;
-        height: 24px !important;
-        border-radius: 50% !important;
-        border: none !important;
-        background: rgba(0,0,0,0.5) !important;
-        color: #fff !important;
-        cursor: pointer !important;
-        font-size: 14px !important;
-        line-height: 1 !important;
-        z-index: 10 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-      }
-      #${CONTAINER_ID} .sooty-hide:hover {
-        background: rgba(0,0,0,0.7) !important;
-      }
-    `;
+    var style = document.createElement('style');
+    style.textContent = [
+      '#${CONTAINER_ID} {',
+      '  position: fixed !important;',
+      '  bottom: 16px !important;',
+      '  right: 16px !important;',
+      '  width: 200px !important;',
+      '  height: 240px !important;',
+      '  max-width: calc(100vw - 32px) !important;',
+      '  max-height: calc(100vh - 32px) !important;',
+      '  z-index: 2147483646 !important;',
+      '  background: transparent !important;',
+      '  box-shadow: none !important;',
+      '  border: none !important;',
+      '  border-radius: 0 !important;',
+      '  overflow: visible !important;',
+      '  font-family: system-ui, sans-serif !important;',
+      '  pointer-events: none !important;',
+      '}',
+      '#${CONTAINER_ID} iframe {',
+      '  width: 100% !important;',
+      '  height: 100% !important;',
+      '  border: none !important;',
+      '  display: block !important;',
+      '  pointer-events: auto !important;',
+      '  background: transparent !important;',
+      '}'
+    ].join('').replace(/\$\{CONTAINER_ID\}/g, CONTAINER_ID);
     document.head.appendChild(style);
 
-    const iframe = document.createElement('iframe');
-    iframe.src = EMBED_URL;
+    var iframe = document.createElement('iframe');
     iframe.title = 'Sooty';
 
-    const hideBtn = document.createElement('button');
-    hideBtn.type = 'button';
-    hideBtn.className = 'sooty-hide';
-    hideBtn.innerHTML = '×';
-    hideBtn.title = '暫時隱藏（可從擴充功能圖示再打開）';
-    hideBtn.addEventListener('click', function () {
-      chrome.storage.local.set({ [STORAGE_KEY]: false }, function () {
-        setVisible(false);
-      });
-    });
-
     wrap.appendChild(iframe);
-    wrap.appendChild(hideBtn);
     document.body.appendChild(wrap);
-  }
 
-  function setVisible(visible) {
-    const el = getContainer();
-    if (!el) return;
-    el.style.display = visible ? 'block' : 'none';
-  }
-
-  function init() {
-    chrome.storage.local.get([STORAGE_KEY], function (result) {
-      const visible = result[STORAGE_KEY] !== false; // 預設顯示
-      if (visible) {
-        createWidget();
-        setVisible(true);
+    chrome.storage.local.get([SOOTY_ID_KEY, SOOTY_APPEARANCE_KEY], function (r) {
+      var sootyId = r[SOOTY_ID_KEY];
+      if (!sootyId) {
+        ensureSootyId(function (id) {
+          chrome.storage.local.get([SOOTY_APPEARANCE_KEY], function (r2) {
+            iframe.src = buildEmbedUrl(id, r2[SOOTY_APPEARANCE_KEY]);
+          });
+        });
+      } else {
+        iframe.src = buildEmbedUrl(sootyId, r[SOOTY_APPEARANCE_KEY]);
       }
     });
   }
 
-  chrome.storage.onChanged.addListener(function (changes, areaName) {
-    if (areaName !== 'local' || !changes[STORAGE_KEY]) return;
-    const visible = changes[STORAGE_KEY].newValue !== false;
-    if (visible) {
-      createWidget();
-      setVisible(true);
+  function showCompanion() {
+    // 使用者主動按「陪伴模式」時一律顯示；僅在「新分頁自動載入」時跳過主站頁面（見 tryShowCompanionIfOn）
+    var el = getContainer();
+    if (el) {
+      el.style.display = 'block';
+      var ifr = el.querySelector('iframe');
+      if (ifr) {
+        chrome.storage.local.get([SOOTY_ID_KEY, SOOTY_APPEARANCE_KEY], function (r) {
+          if (r[SOOTY_ID_KEY]) ifr.src = buildEmbedUrl(r[SOOTY_ID_KEY], r[SOOTY_APPEARANCE_KEY]);
+        });
+      }
     } else {
-      setVisible(false);
+      createWidget();
     }
+    chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: true });
+  }
+
+  function hideCompanion() {
+    var el = getContainer();
+    if (el) el.style.display = 'none';
+    chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: false });
+  }
+
+  chrome.runtime.onMessage.addListener(function (msg) {
+    if (msg === 'showCompanion') showCompanion();
+    if (msg === 'hideCompanion') hideCompanion();
   });
 
+  // 需求 2：若已在其他分頁開啟陪伴模式，新分頁載入時自動顯示同一隻小黑炭（主站頁面不自動顯示，避免重疊）
+  function tryShowCompanionIfOn() {
+    if (isSootyPage()) return;
+    chrome.storage.local.get([COMPANION_VISIBLE_KEY], function (r) {
+      if (r[COMPANION_VISIBLE_KEY]) showCompanion();
+    });
+  }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', tryShowCompanionIfOn);
   } else {
-    init();
+    tryShowCompanionIfOn();
   }
 })();
