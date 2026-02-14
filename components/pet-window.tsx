@@ -214,14 +214,27 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
       setPetState(saved.petState);
       setAppearance(saved.appearance);
       setLastInteractionTime(saved.lastInteractionTime);
+      if (typeof window !== "undefined" && window.self !== window.top) {
+        try {
+          window.parent.postMessage(
+            { type: "SOOTY_APPEARANCE", sootyId, appearance: saved.appearance },
+            "*"
+          );
+        } catch (_) {}
+      }
     }
     setShowFloatingWidget(loadWidgetVisible());
-  }, [stateKey]);
+  }, [stateKey, sootyId]);
 
-  // Persist progress when key state changes
+  // Persist progress when key state changes；若在擴充 iframe 內則同步造型給 popup（右下角 embed 用）
   useEffect(() => {
     saveState(stateKey, petName, age, petState, appearance, lastInteractionTime);
-  }, [stateKey, petName, age, petState, appearance, lastInteractionTime]);
+    if (typeof window !== "undefined" && window.self !== window.top && sootyId) {
+      try {
+        window.parent.postMessage({ type: "SOOTY_APPEARANCE", sootyId, appearance }, "*");
+      } catch (_) {}
+    }
+  }, [stateKey, petName, age, petState, appearance, lastInteractionTime, sootyId]);
 
   // Walk mode (inline DEMO)
   const [isWalking, setIsWalking] = useState(false);

@@ -11,7 +11,7 @@ import {
   type SavedState,
   DEFAULT_SAVED_STATE,
 } from "@/lib/sooty-state";
-import type { SootAppearance } from "@/components/soot-sprite";
+import type { SootAppearance, SootShape } from "@/components/soot-sprite";
 
 const MAX_STAT = 100;
 
@@ -22,6 +22,15 @@ export function EmbedCharacterOnly() {
   const searchParams = useSearchParams();
   const sootyId = searchParams?.get?.("sootyId") ?? undefined;
   const stateKey = getStateKey(sootyId);
+  const validShapes: SootShape[] = ["circle", "square", "star", "triangle", "heart"];
+  const appearanceFromUrl = (() => {
+    const shape = searchParams?.get?.("shape");
+    const color = searchParams?.get?.("color");
+    if (shape && validShapes.includes(shape as SootShape) && color && /^#[0-9a-fA-F]{6}$/.test(color)) {
+      return { shape: shape as SootShape, color } as SootAppearance;
+    }
+    return null;
+  })();
   const maxSizeScale = (() => {
     try {
       const raw = searchParams?.get?.("maxSize");
@@ -111,7 +120,7 @@ export function EmbedCharacterOnly() {
         isSleeping={false}
         onClick={() => {}}
         age={state.age}
-        appearance={state.appearance as SootAppearance}
+        appearance={(appearanceFromUrl ?? state.appearance) as SootAppearance}
         mouthDown={mouthDown}
         maxSizeScale={maxSizeScale}
       />
