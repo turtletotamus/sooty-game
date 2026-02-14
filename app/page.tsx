@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { PetWindow } from "@/components/pet-window";
 import { FloatingParticles } from "@/components/floating-particles";
 import { motion } from "framer-motion";
@@ -10,9 +10,26 @@ import { APP_VERSION } from "@/lib/version";
 export default function Home() {
   const { t } = useLanguage();
   const isInIframe = typeof window !== "undefined" && window.self !== window.top;
+
+  useEffect(() => {
+    if (!isInIframe || typeof document === "undefined") return;
+    const html = document.documentElement;
+    const body = document.body;
+    const isDark = html.classList.contains("dark");
+    const bg = isDark ? "#1a1a1a" : "#f0f0f0";
+    const prevHtml = html.style.background;
+    const prevBody = body.style.background;
+    html.style.background = bg;
+    body.style.background = bg;
+    return () => {
+      html.style.background = prevHtml;
+      body.style.background = prevBody;
+    };
+  }, [isInIframe]);
+
   if (isInIframe) {
     return (
-      <main className="h-full min-h-0 w-full overflow-hidden flex flex-col items-center justify-start bg-[#f0f0f0] dark:bg-[#1a1a1a] p-0">
+      <main className="h-full min-h-screen w-full overflow-hidden flex flex-col items-center justify-start bg-[#f0f0f0] dark:bg-[#1a1a1a] p-0">
         <div className="flex-1 w-full min-h-0 flex flex-col">
           <Suspense fallback={<div className="text-muted-foreground text-sm">...</div>}>
             <PetWindow />

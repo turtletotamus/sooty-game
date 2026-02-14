@@ -40,8 +40,8 @@
     handle.style.top = (r.top + r.height / 2) + 'px';
     handle.style.right = 'auto';
     handle.style.bottom = 'auto';
-    handle.style.marginLeft = '-20px';
-    handle.style.marginTop = '-20px';
+    handle.style.marginLeft = '-12px';
+    handle.style.marginTop = '-12px';
   }
 
   function ensureSootyId(cb) {
@@ -113,7 +113,7 @@
       if (!msg) {
         msg = document.createElement('div');
         msg.className = 'sooty-csp-msg';
-        msg.textContent = '此頁面不允許顯示陪伴模式（網站安全設定）';
+        msg.textContent = typeof chrome !== 'undefined' && chrome.i18n && chrome.i18n.getMessage ? chrome.i18n.getMessage('companionUnavailable') : 'Sooty can\'t be used on this page.';
         wrap.appendChild(msg);
       }
     }
@@ -168,35 +168,21 @@
       '}',
       '#' + HANDLE_ID + ' {',
       '  position: fixed !important;',
-      '  width: 40px !important;',
-      '  height: 40px !important;',
+      '  width: 24px !important;',
+      '  height: 24px !important;',
       '  border-radius: 50% !important;',
       '  cursor: move !important;',
       '  pointer-events: auto !important;',
-      '  background: rgba(255,255,255,0.4) !important;',
-      '  border: 2px solid rgba(0,0,0,0.18) !important;',
-      '  transition: border-color 0.15s, background 0.15s !important;',
+      '  background: transparent !important;',
+      '  border: none !important;',
       '  z-index: 2147483647 !important;',
       '  box-sizing: border-box !important;',
       '}',
       '#' + HANDLE_ID + ':hover {',
-      '  border-color: rgba(0,0,0,0.35) !important;',
-      '  background: rgba(255,255,255,0.6) !important;',
+      '  background: rgba(0,0,0,0.06) !important;',
       '}',
       '#' + HANDLE_ID + '::after {',
-      '  content: "" !important;',
-      '  position: absolute !important;',
-      '  left: 50% !important;',
-      '  top: 50% !important;',
-      '  width: 20px !important;',
-      '  height: 12px !important;',
-      '  margin-left: -10px !important;',
-      '  margin-top: -6px !important;',
-      '  background: radial-gradient(circle at 33% 50%, rgba(0,0,0,0.4) 2px, transparent 2px), radial-gradient(circle at 66% 50%, rgba(0,0,0,0.4) 2px, transparent 2px) !important;',
-      '  opacity: 0.8 !important;',
-      '}',
-      '#' + HANDLE_ID + ':hover::after {',
-      '  opacity: 1 !important;',
+      '  display: none !important;',
       '}',
       '#${CONTAINER_ID}.sooty-csp-blocked {',
       '  width: auto !important;',
@@ -207,13 +193,14 @@
       '  position: static !important;',
       '}',
       '#${CONTAINER_ID}.sooty-csp-blocked .sooty-csp-msg {',
-      '  padding: 10px 12px;',
-      '  font-size: 12px;',
-      '  color: #666;',
-      '  background: #f5f5f5;',
-      '  border-radius: 8px;',
-      '  box-shadow: 0 2px 8px rgba(0,0,0,0.1);',
+      '  padding: 6px 10px;',
+      '  font-size: 11px;',
+      '  color: #555;',
+      '  background: rgba(0,0,0,0.06);',
+      '  border-radius: 6px;',
       '  pointer-events: auto !important;',
+      '  max-width: 140px;',
+      '  line-height: 1.3;',
       '}'
     ].join('').replace(/\$\{CONTAINER_ID\}/g, CONTAINER_ID);
     document.head.appendChild(style);
