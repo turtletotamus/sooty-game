@@ -8,6 +8,7 @@
   const COMPANION_POSITION_KEY = 'sootyCompanionPosition';
   const SOOTY_APPEARANCE_KEY = 'sootyAppearance';
   const CONTAINER_ID = 'sooty-extension-root';
+  const HANDLE_ID = 'sooty-extension-drag-handle';
   const CSP_LOAD_TIMEOUT_MS = 2500;
   const DEFAULT_WIDTH = 160;
   const DEFAULT_HEIGHT = 200;
@@ -24,6 +25,23 @@
 
   function getContainer() {
     return document.getElementById(CONTAINER_ID);
+  }
+
+  function getHandle() {
+    return document.getElementById(HANDLE_ID);
+  }
+
+  function syncHandlePosition() {
+    var wrap = getContainer();
+    var handle = getHandle();
+    if (!wrap || !handle) return;
+    var r = wrap.getBoundingClientRect();
+    handle.style.left = (r.left + r.width / 2) + 'px';
+    handle.style.top = (r.top + r.height / 2) + 'px';
+    handle.style.right = 'auto';
+    handle.style.bottom = 'auto';
+    handle.style.marginLeft = '-20px';
+    handle.style.marginTop = '-20px';
   }
 
   function ensureSootyId(cb) {
@@ -83,10 +101,14 @@
       var msg = wrap.querySelector('.sooty-csp-msg');
       if (msg) msg.remove();
       iframeEl.style.display = '';
+      var h = getHandle();
+      if (h) h.style.display = '';
     }
     function onBlocked() {
       wrap.classList.add('sooty-csp-blocked');
       iframeEl.style.display = 'none';
+      var h = getHandle();
+      if (h) h.style.display = 'none';
       var msg = wrap.querySelector('.sooty-csp-msg');
       if (!msg) {
         msg = document.createElement('div');
@@ -144,26 +166,24 @@
       '  pointer-events: none !important;',
       '  background: transparent !important;',
       '}',
-      '#${CONTAINER_ID} .sooty-companion-drag-handle {',
-      '  position: absolute !important;',
-      '  left: 50% !important;',
-      '  top: 50% !important;',
+      '#' + HANDLE_ID + ' {',
+      '  position: fixed !important;',
       '  width: 40px !important;',
       '  height: 40px !important;',
-      '  margin-left: -20px !important;',
-      '  margin-top: -20px !important;',
       '  border-radius: 50% !important;',
       '  cursor: move !important;',
       '  pointer-events: auto !important;',
       '  background: transparent !important;',
       '  border: 2px solid transparent !important;',
       '  transition: border-color 0.15s, background 0.15s !important;',
+      '  z-index: 2147483647 !important;',
+      '  box-sizing: border-box !important;',
       '}',
-      '#${CONTAINER_ID} .sooty-companion-drag-handle:hover {',
+      '#' + HANDLE_ID + ':hover {',
       '  border-color: rgba(0,0,0,0.2) !important;',
       '  background: rgba(255,255,255,0.25) !important;',
       '}',
-      '#${CONTAINER_ID} .sooty-companion-drag-handle::after {',
+      '#' + HANDLE_ID + '::after {',
       '  content: "" !important;',
       '  position: absolute !important;',
       '  left: 50% !important;',
@@ -175,7 +195,7 @@
       '  background: radial-gradient(circle at 33% 50%, rgba(0,0,0,0.35) 2px, transparent 2px), radial-gradient(circle at 66% 50%, rgba(0,0,0,0.35) 2px, transparent 2px) !important;',
       '  opacity: 0.6 !important;',
       '}',
-      '#${CONTAINER_ID} .sooty-companion-drag-handle:hover::after {',
+      '#' + HANDLE_ID + ':hover::after {',
       '  opacity: 1 !important;',
       '}',
       '#${CONTAINER_ID}.sooty-csp-blocked {',
@@ -185,9 +205,6 @@
       '}',
       '#${CONTAINER_ID}.sooty-csp-blocked .sooty-companion-iframe-wrap {',
       '  position: static !important;',
-      '}',
-      '#${CONTAINER_ID}.sooty-csp-blocked .sooty-companion-drag-handle {',
-      '  display: none !important;',
       '}',
       '#${CONTAINER_ID}.sooty-csp-blocked .sooty-csp-msg {',
       '  padding: 10px 12px;',
@@ -208,13 +225,14 @@
     iframeWrap.appendChild(iframe);
 
     var handle = document.createElement('div');
+    handle.id = HANDLE_ID;
     handle.className = 'sooty-companion-drag-handle';
     handle.title = '拖曳可移動';
     handle.setAttribute('aria-label', '拖曳可移動陪伴小黑炭');
 
     wrap.appendChild(iframeWrap);
-    wrap.appendChild(handle);
     document.body.appendChild(wrap);
+    document.body.appendChild(handle);
 
     (function setupDrag() {
       var dragging = false;
@@ -248,6 +266,7 @@
         wrap.style.top = next.top + 'px';
         wrap.style.right = 'auto';
         wrap.style.bottom = 'auto';
+        syncHandlePosition();
       });
 
       window.addEventListener('mouseup', function () {
@@ -255,11 +274,13 @@
         dragging = false;
         var rect = wrap.getBoundingClientRect();
         chrome.storage.local.set({ [COMPANION_POSITION_KEY]: { left: rect.left, top: rect.top } });
+        syncHandlePosition();
       });
     })();
 
     chrome.storage.local.get([COMPANION_POSITION_KEY, SOOTY_ID_KEY, SOOTY_APPEARANCE_KEY], function (r) {
       applyPosition(wrap, r[COMPANION_POSITION_KEY]);
+      requestAnimationFrame(function () { syncHandlePosition(); });
       var sootyId = r[SOOTY_ID_KEY];
       if (!sootyId) {
         ensureSootyId(function (id) {
@@ -276,10 +297,13 @@
   function showCompanion() {
     if (isSootyPage()) return;
     var el = getContainer();
+    var handleEl = getHandle();
     if (el) {
       el.style.display = 'flex';
+      if (handleEl) handleEl.style.display = '';
       chrome.storage.local.get([COMPANION_POSITION_KEY], function (r) {
         applyPosition(el, r[COMPANION_POSITION_KEY]);
+        requestAnimationFrame(function () { syncHandlePosition(); });
       });
       var ifr = el.querySelector('iframe');
       if (ifr) {
@@ -295,7 +319,9 @@
 
   function hideCompanion() {
     var el = getContainer();
+    var handleEl = getHandle();
     if (el) el.style.display = 'none';
+    if (handleEl) handleEl.style.display = 'none';
     chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: false });
   }
 
