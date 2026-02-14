@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../chrome-extension"
+		},
+		{
+			"path": "../components"
+		},
+		{
+			"path": "../lib"
+		},
+		{
+			"path": "../public"
+		}
+	],
+	"settings": {}
+}

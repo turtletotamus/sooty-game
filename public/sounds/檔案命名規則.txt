@@ -1,0 +1,25 @@
+📁 音檔放置說明
+
+請將你的音檔放到這個資料夾：public/sounds/
+
+📝 檔案命名規則：
+
+【提醒聲（Alarm Sounds）】
+- alarm-gentle.mp3  (或 .wav, .ogg)
+- alarm-bell.mp3
+- alarm-chime.mp3
+- alarm-beep.mp3
+
+【背景音效（Background Sounds）】
+- tick.mp3          (滴答聲)
+- fire.mp3          (火爐聲)
+- rain.mp3          (下雨聲)
+
+💡 提示：
+- 支援格式：.mp3, .wav, .ogg 等瀏覽器支援的格式
+- 檔案名稱必須完全符合上面的命名規則
+- 如果沒有某個音檔，系統會使用預設的生成音效
+
+範例：
+✅ 正確：alarm-gentle.mp3, tick.mp3
+❌ 錯誤：my-alarm.mp3, alarm_gentle.mp3
