@@ -128,34 +128,66 @@
       '  font-family: system-ui, sans-serif !important;',
       '  pointer-events: none !important;',
       '  display: flex !important;',
-      '  flex-direction: column !important;',
-      '}',
-      '#${CONTAINER_ID} .sooty-companion-handle {',
-      '  width: 100% !important;',
-      '  height: 20px !important;',
-      '  min-height: 20px !important;',
-      '  cursor: move !important;',
-      '  pointer-events: auto !important;',
-      '  background: transparent !important;',
-      '  flex-shrink: 0 !important;',
+      '  align-items: center !important;',
+      '  justify-content: center !important;',
       '}',
       '#${CONTAINER_ID} .sooty-companion-iframe-wrap {',
-      '  flex: 1 !important;',
-      '  min-height: 0 !important;',
-      '  pointer-events: auto !important;',
+      '  position: absolute !important;',
+      '  inset: 0 !important;',
+      '  pointer-events: none !important;',
       '}',
       '#${CONTAINER_ID} iframe {',
       '  width: 100% !important;',
       '  height: 100% !important;',
       '  border: none !important;',
       '  display: block !important;',
+      '  pointer-events: none !important;',
+      '  background: transparent !important;',
+      '}',
+      '#${CONTAINER_ID} .sooty-companion-drag-handle {',
+      '  position: absolute !important;',
+      '  left: 50% !important;',
+      '  top: 50% !important;',
+      '  width: 40px !important;',
+      '  height: 40px !important;',
+      '  margin-left: -20px !important;',
+      '  margin-top: -20px !important;',
+      '  border-radius: 50% !important;',
+      '  cursor: move !important;',
       '  pointer-events: auto !important;',
       '  background: transparent !important;',
+      '  border: 2px solid transparent !important;',
+      '  transition: border-color 0.15s, background 0.15s !important;',
+      '}',
+      '#${CONTAINER_ID} .sooty-companion-drag-handle:hover {',
+      '  border-color: rgba(0,0,0,0.2) !important;',
+      '  background: rgba(255,255,255,0.25) !important;',
+      '}',
+      '#${CONTAINER_ID} .sooty-companion-drag-handle::after {',
+      '  content: "" !important;',
+      '  position: absolute !important;',
+      '  left: 50% !important;',
+      '  top: 50% !important;',
+      '  width: 20px !important;',
+      '  height: 12px !important;',
+      '  margin-left: -10px !important;',
+      '  margin-top: -6px !important;',
+      '  background: radial-gradient(circle at 33% 50%, rgba(0,0,0,0.35) 2px, transparent 2px), radial-gradient(circle at 66% 50%, rgba(0,0,0,0.35) 2px, transparent 2px) !important;',
+      '  opacity: 0.6 !important;',
+      '}',
+      '#${CONTAINER_ID} .sooty-companion-drag-handle:hover::after {',
+      '  opacity: 1 !important;',
       '}',
       '#${CONTAINER_ID}.sooty-csp-blocked {',
       '  width: auto !important;',
       '  height: auto !important;',
       '  max-width: 260px !important;',
+      '}',
+      '#${CONTAINER_ID}.sooty-csp-blocked .sooty-companion-iframe-wrap {',
+      '  position: static !important;',
+      '}',
+      '#${CONTAINER_ID}.sooty-csp-blocked .sooty-companion-drag-handle {',
+      '  display: none !important;',
       '}',
       '#${CONTAINER_ID}.sooty-csp-blocked .sooty-csp-msg {',
       '  padding: 10px 12px;',
@@ -169,19 +201,19 @@
     ].join('').replace(/\$\{CONTAINER_ID\}/g, CONTAINER_ID);
     document.head.appendChild(style);
 
-    var handle = document.createElement('div');
-    handle.className = 'sooty-companion-handle';
-    handle.title = '拖曳移動';
-    handle.setAttribute('aria-label', '拖曳移動陪伴小黑炭');
-
     var iframeWrap = document.createElement('div');
     iframeWrap.className = 'sooty-companion-iframe-wrap';
     var iframe = document.createElement('iframe');
     iframe.title = 'Sooty';
     iframeWrap.appendChild(iframe);
 
-    wrap.appendChild(handle);
+    var handle = document.createElement('div');
+    handle.className = 'sooty-companion-drag-handle';
+    handle.title = '拖曳可移動';
+    handle.setAttribute('aria-label', '拖曳可移動陪伴小黑炭');
+
     wrap.appendChild(iframeWrap);
+    wrap.appendChild(handle);
     document.body.appendChild(wrap);
 
     (function setupDrag() {
