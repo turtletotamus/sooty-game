@@ -4,10 +4,13 @@
   <meta charset="utf-8">
   <title>小黑炭 Sooty</title>
   <style>
+    /* 官方規範：popup 尺寸須在 25x25～800x600 之間，由內容決定。此處設預設尺寸並以 max 適應較小視窗。 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
       width: 400px;
       height: 560px;
+      max-width: min(400px, 95vw);
+      max-height: min(560px, 90vh);
       overflow: hidden;
       font-family: system-ui, -apple-system, sans-serif;
     }

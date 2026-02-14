@@ -122,9 +122,21 @@
     chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: false });
   }
 
+  function refreshCompanionAppearance() {
+    var el = getContainer();
+    if (!el || el.style.display === 'none') return;
+    var ifr = el.querySelector('iframe');
+    if (ifr) {
+      chrome.storage.local.get([SOOTY_ID_KEY, SOOTY_APPEARANCE_KEY], function (r) {
+        if (r[SOOTY_ID_KEY]) ifr.src = buildEmbedUrl(r[SOOTY_ID_KEY], r[SOOTY_APPEARANCE_KEY]);
+      });
+    }
+  }
+
   chrome.runtime.onMessage.addListener(function (msg) {
     if (msg === 'showCompanion') showCompanion();
     if (msg === 'hideCompanion') hideCompanion();
+    if (msg === 'refreshCompanionAppearance') refreshCompanionAppearance();
   });
 
   // 需求 2：若已在其他分頁開啟陪伴模式，新分頁載入時自動顯示同一隻小黑炭（主站頁面不自動顯示，避免重疊）

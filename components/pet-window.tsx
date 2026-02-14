@@ -600,21 +600,22 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
 
   const spriteSize = Math.round(SOOT_BASE_SIZE * getSizeMultiplier(age));
   const isOverflowing = spriteSize > 200;
+  const isInPopup = typeof window !== "undefined" && window.self !== window.top;
 
   return (
     <>
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-sm mx-auto"
+        className={`w-full max-w-sm mx-auto ${isInPopup ? "max-h-[100vh] overflow-hidden flex flex-col" : ""}`}
       >
-        <Card className={`border-2 border-border/50 shadow-2xl bg-card/95 backdrop-blur ${isOverflowing ? "overflow-visible" : "overflow-hidden"}`}>
+        <Card className={`border-2 border-border/50 shadow-2xl bg-card/95 backdrop-blur flex flex-col min-h-0 ${isOverflowing && !isInPopup ? "overflow-visible" : "overflow-hidden"} ${isInPopup ? "max-h-[100vh] flex-1" : ""}`}>
           {/* Window Title Bar */}
-          <div className="bg-secondary/50 px-4 py-2 flex items-center justify-between border-b border-border/50">
+          <div className={`bg-secondary/50 flex items-center justify-between border-b border-border/50 shrink-0 ${isInPopup ? "px-2 py-1.5" : "px-4 py-2"}`}>
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">{t("petWindow.windowTitle")}</span>
-              <span className="text-xs font-normal text-muted-foreground">v{APP_VERSION}</span>
+              <Sparkles className={isInPopup ? "w-3 h-3 text-primary" : "w-4 h-4 text-primary"} />
+              <span className={isInPopup ? "text-xs font-medium text-foreground" : "text-sm font-medium text-foreground"}>{t("petWindow.windowTitle")}</span>
+              <span className="text-[10px] font-normal text-muted-foreground">v{APP_VERSION}</span>
             </div>
             <div className="relative flex items-center gap-1" ref={settingsMenuRef}>
               {typeof window !== "undefined" && window.self !== window.top && (
@@ -671,7 +672,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
           </div>
 
           {/* Character Info Header */}
-          <div className="bg-secondary/30 px-4 py-3 border-b border-border/30">
+          <div className={`bg-secondary/30 border-b border-border/30 shrink-0 ${isInPopup ? "px-2 py-2" : "px-4 py-3"}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {isEditingName ? (
@@ -723,7 +724,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
             </div>
           </div>
 
-          <CardContent className="space-y-4 px-4 py-4">
+          <CardContent className={`flex flex-col min-h-0 overflow-hidden ${isInPopup ? "space-y-2 px-2 py-2 flex-1" : "space-y-4 px-4 py-4"}`}>
 
             {/* Notification */}
             <AnimatePresence>
@@ -764,8 +765,8 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
             {/* Sprite Container with Weather / Walk scene */}
             <div 
               ref={walkAreaRef}
-              className={`relative flex justify-center items-center py-2 rounded-xl ${
-                isOverflowing ? "overflow-visible min-h-[250px]" : "overflow-hidden min-h-[180px]"
+              className={`relative flex justify-center items-center rounded-xl shrink-0 ${
+                isInPopup ? "py-1 min-h-[100px] overflow-hidden" : isOverflowing ? "py-2 overflow-visible min-h-[250px]" : "py-2 overflow-hidden min-h-[180px]"
               } ${isWalking ? getWalkSceneBg(walkScene) : ""}`}
             >
               {/* Weather Effects Layer (disabled during walking) */}
@@ -905,7 +906,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
             </div>
 
             {/* Stats - Compact 2x2 Grid */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            <div className={`grid grid-cols-2 shrink-0 ${isInPopup ? "gap-x-2 gap-y-1" : "gap-x-4 gap-y-2"}`}>
               <StatBar
                 label={t("petWindow.hunger")}
                 value={petState.hunger}
@@ -937,7 +938,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
             </div>
 
             {/* Unified Action Panel */}
-            <div className="pt-2">
+            <div className={isInPopup ? "pt-1 shrink-0" : "pt-2"}>
               <ActionPanel
                 onAction={handleAction}
                 currentEnergy={petState.energy}
@@ -946,11 +947,12 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
                 currentWeather={currentWeather}
                 onWeatherChange={handleWeatherChange}
                 onPomodoroStart={() => setIsPomodoroOpen(true)}
+                compact={isInPopup}
               />
             </div>
 
             {/* Tips */}
-            <div className="text-center text-[10px] text-muted-foreground pt-1">
+            <div className={`text-center text-muted-foreground shrink-0 ${isInPopup ? "text-[9px] pt-0.5" : "text-[10px] pt-1"}`}>
               {t("petWindow.tip", { name: petName })}
             </div>
           </CardContent>

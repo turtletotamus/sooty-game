@@ -9,6 +9,16 @@ import { APP_VERSION } from "@/lib/version";
 
 export default function Home() {
   const { t } = useLanguage();
+  const isInIframe = typeof window !== "undefined" && window.self !== window.top;
+  if (isInIframe) {
+    return (
+      <main className="h-full min-h-0 w-full overflow-hidden flex items-center justify-center bg-background">
+        <Suspense fallback={<div className="text-muted-foreground text-sm">...</div>}>
+          <PetWindow />
+        </Suspense>
+      </main>
+    );
+  }
   return (
     <main className="min-h-screen bg-background relative overflow-hidden">
       <FloatingParticles />

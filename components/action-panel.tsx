@@ -125,6 +125,8 @@ interface ActionPanelProps {
   currentWeather: WeatherType;
   onWeatherChange: (weather: WeatherType) => void;
   onPomodoroStart: () => void;
+  /** 擴充 popup 緊湊模式：較小按鈕、一版內不捲動 */
+  compact?: boolean;
 }
 
 export function ActionPanel({ 
@@ -134,7 +136,8 @@ export function ActionPanel({
   onBreathingStart,
   currentWeather,
   onWeatherChange,
-  onPomodoroStart
+  onPomodoroStart,
+  compact = false,
 }: ActionPanelProps) {
   const { t } = useLanguage();
   const weatherOptions = weatherTypes.map((type) => ({
@@ -144,9 +147,9 @@ export function ActionPanel({
   }));
 
   return (
-    <div className="space-y-3">
+    <div className={compact ? "space-y-1.5" : "space-y-3"}>
       {/* Main actions */}
-      <div className="grid grid-cols-6 gap-2">
+      <div className={`grid grid-cols-6 ${compact ? "gap-1" : "gap-2"}`}>
         {actions.map((action, index) => {
           const canAfford = action.energyCost <= 0 || currentEnergy >= action.energyCost;
 
@@ -159,7 +162,7 @@ export function ActionPanel({
             >
               <Button
                 variant="ghost"
-                className="w-full h-auto flex flex-col gap-1 p-2 hover:bg-secondary/60 transition-all disabled:opacity-40 rounded-xl"
+                className={`w-full h-auto flex flex-col hover:bg-secondary/60 transition-all disabled:opacity-40 rounded-xl ${compact ? "gap-0.5 p-1 min-h-0" : "gap-1 p-2"}`}
                 onClick={() => onAction(action)}
                 disabled={disabled || !canAfford}
               >
@@ -169,9 +172,9 @@ export function ActionPanel({
                   whileTap={{ scale: 0.9 }}
                   transition={{ type: "spring", stiffness: 400 }}
                 >
-                  {action.icon}
+                  {compact ? <span className="scale-75 inline-block">{action.icon}</span> : action.icon}
                 </motion.span>
-                <span className="text-[10px] font-medium text-muted-foreground">{t(`actions.${action.id}`)}</span>
+                <span className={compact ? "text-[8px] font-medium text-muted-foreground leading-tight" : "text-[10px] font-medium text-muted-foreground"}>{t(`actions.${action.id}`)}</span>
               </Button>
             </motion.div>
           );
@@ -182,9 +185,9 @@ export function ActionPanel({
       <div className="border-t border-border/30" />
 
       {/* Wellness and Weather row */}
-      <div className="flex items-center justify-between gap-2">
+      <div className={`flex items-center justify-between ${compact ? "gap-1" : "gap-2"}`}>
         {/* Breathing exercise and Pomodoro buttons */}
-        <div className="flex items-center gap-2">
+        <div className={compact ? "flex items-center gap-1" : "flex items-center gap-2"}>
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -193,12 +196,12 @@ export function ActionPanel({
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 bg-transparent border-primary/30 hover:bg-primary/10 hover:border-primary/50 text-foreground hover:text-black dark:hover:text-foreground"
+              className={`flex items-center bg-transparent border-primary/30 hover:bg-primary/10 hover:border-primary/50 text-foreground hover:text-black dark:hover:text-foreground ${compact ? "gap-1 h-7 px-1.5 text-[10px]" : "gap-2"}`}
               onClick={onBreathingStart}
               disabled={disabled}
             >
-              <Wind className="w-4 h-4" />
-              <span className="text-xs">{t("actions.breathe")}</span>
+              <Wind className={compact ? "w-3 h-3" : "w-4 h-4"} />
+              <span className={compact ? "text-[10px]" : "text-xs"}>{t("actions.breathe")}</span>
             </Button>
           </motion.div>
           <motion.div
@@ -209,18 +212,18 @@ export function ActionPanel({
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 bg-transparent border-primary/30 hover:bg-primary/10 hover:border-primary/50 text-foreground hover:text-black dark:hover:text-foreground"
+              className={`flex items-center bg-transparent border-primary/30 hover:bg-primary/10 hover:border-primary/50 text-foreground hover:text-black dark:hover:text-foreground ${compact ? "gap-1 h-7 px-1.5 text-[10px]" : "gap-2"}`}
               onClick={onPomodoroStart}
               disabled={disabled}
             >
-              <Timer className="w-4 h-4" />
-              <span className="text-xs">{t("actions.timer")}</span>
+              <Timer className={compact ? "w-3 h-3" : "w-4 h-4"} />
+              <span className={compact ? "text-[10px]" : "text-xs"}>{t("actions.timer")}</span>
             </Button>
           </motion.div>
         </div>
 
         {/* Weather selector */}
-        <div className="flex items-center gap-1">
+        <div className={`flex items-center ${compact ? "gap-0.5" : "gap-1"}`}>
           {weatherOptions.map((weather, index) => (
             <motion.div
               key={weather.type}
@@ -232,7 +235,9 @@ export function ActionPanel({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className={`w-8 h-8 min-w-8 min-h-8 p-0 rounded-lg transition-all shrink-0 ${
+                className={`p-0 rounded-lg transition-all shrink-0 ${
+                  compact ? "w-6 h-6 min-w-6 min-h-6" : "w-8 h-8 min-w-8 min-h-8"
+                } ${
                   currentWeather === weather.type 
                     ? "bg-primary/15 text-primary ring-2 ring-primary/70 ring-inset shadow-sm" 
                     : "hover:bg-secondary/50 text-muted-foreground border border-transparent"

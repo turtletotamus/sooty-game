@@ -40,8 +40,13 @@ window.addEventListener('message', function (e) {
   if (!e.data || !e.data.type) return;
   if (e.data.type === 'OPEN_COMPANION') {
     getActiveBrowserTab(function (tab) {
-      if (tab) chrome.tabs.sendMessage(tab.id, 'showCompanion').catch(function () {});
-      window.close();
+      if (!tab) { window.close(); return; }
+      chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['config.js', 'content.js'] }).catch(function () {}).then(function () {
+        setTimeout(function () {
+          chrome.tabs.sendMessage(tab.id, 'showCompanion').catch(function () {});
+        }, 80);
+        window.close();
+      });
     });
   }
   if (e.data.type === 'CLOSE_COMPANION') {
@@ -54,6 +59,16 @@ window.addEventListener('message', function (e) {
   }
   if (e.data.type === 'SOOTY_APPEARANCE' && e.data.appearance) {
     var app = e.data.appearance;
-    if (app.shape && app.color) chrome.storage.local.set({ [SOOTY_APPEARANCE_KEY]: { shape: app.shape, color: app.color } });
+    if (app.shape && app.color) {
+      chrome.storage.local.set({ [SOOTY_APPEARANCE_KEY]: { shape: app.shape, color: app.color } }, function () {
+        chrome.tabs.query({}, function (tabs) {
+          tabs.forEach(function (t) {
+            if (t.id && t.url && t.url.indexOf('chrome://') !== 0) {
+              chrome.tabs.sendMessage(t.id, 'refreshCompanionAppearance').catch(function () {});
+            }
+          });
+        });
+      });
+    }
   }
 });
