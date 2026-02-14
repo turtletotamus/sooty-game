@@ -669,9 +669,9 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
       >
         <Card className={`flex flex-col min-h-0 ${isInPopup ? "border-0 shadow-none rounded-none outline-none ring-0 bg-[#f0f0f0] dark:bg-[#1a1a1a] max-h-[100vh] flex-1 overflow-hidden min-h-0" : "border-0 shadow-2xl bg-card/95 backdrop-blur"} ${!isInPopup && isOverflowing ? "overflow-visible" : "overflow-hidden"}`}>
           {/* 頂部：單一標題列（寵物名 + 版本 + 操作）+ 精簡資訊列（年齡 · 心情） */}
-          <div className={`bg-secondary/50 border-b border-border/50 shrink-0 ${isInPopup ? "px-2 py-1" : "px-4 py-1.5"}`}>
+          <div className={`bg-secondary/50 border-b border-border/50 shrink-0 ${isInPopup ? "px-2 py-0.5" : "px-3 py-1"}`}>
             {/* 第一行：左＝標題與版本，右＝Widget／設定／音樂 */}
-            <div className="flex items-center justify-between gap-2 min-h-8">
+            <div className="flex items-center justify-between gap-1.5 min-h-6">
               <div className="flex items-center gap-1.5 min-w-0 flex-1">
                 <Sparkles className={isInPopup ? "w-3 h-3 shrink-0 text-primary" : "w-3.5 h-3.5 shrink-0 text-primary"} />
                 {isEditingName ? (
@@ -704,7 +704,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
                     </button>
                   </div>
                 )}
-                <span className="text-[10px] text-muted-foreground shrink-0">· v{APP_VERSION}</span>
+                <span className="text-xs text-muted-foreground shrink-0">· v{APP_VERSION}</span>
               </div>
               <div className="relative flex items-center gap-0.5 shrink-0" ref={settingsMenuRef}>
                 {typeof window !== "undefined" && window.self !== window.top && (
@@ -752,15 +752,15 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
                 <WhiteNoiseControl alignDropdownRight={isInPopup} />
               </div>
             </div>
-            {/* 第二行：年齡 · 心情（精簡、小字） */}
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground pb-0.5">
+            {/* 第二行：年齡 · 心情（字級稍大、易讀） */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span>{t("petWindow.age")} {age}</span>
               <span aria-hidden>·</span>
               <span>{t("petWindow.mood")} <span className={getEmotionColor()}>{getEmotionDisplay()}</span></span>
             </div>
           </div>
 
-          <CardContent className={`flex flex-col min-h-0 overflow-hidden ${isInPopup ? "space-y-2 px-2 py-2 flex-1" : "space-y-4 px-4 py-4"}`}>
+          <CardContent className={`flex flex-col min-h-0 overflow-hidden ${isInPopup ? "space-y-1.5 px-2 py-1.5 flex-1" : "space-y-2 px-3 py-2"}`}>
 
             {/* Notification */}
             <AnimatePresence>
@@ -802,7 +802,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
             <div 
               ref={walkAreaRef}
               className={`relative flex justify-center items-center rounded-xl shrink-0 ${
-                isInPopup ? "py-1 min-h-[100px] overflow-hidden" : isOverflowing ? "py-2 overflow-visible min-h-[250px]" : "py-2 overflow-hidden min-h-[180px]"
+                isInPopup ? "py-0.5 min-h-[80px] overflow-hidden" : isOverflowing ? "py-1 overflow-visible min-h-[220px]" : "py-1 overflow-hidden min-h-[140px]"
               } ${isWalking ? getWalkSceneBg(walkScene) : ""}`}
             >
               {/* Weather Effects Layer (disabled during walking) */}
@@ -942,7 +942,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
             </div>
 
             {/* Stats - Compact 2x2 Grid */}
-            <div className={`grid grid-cols-2 shrink-0 ${isInPopup ? "gap-x-2 gap-y-1" : "gap-x-4 gap-y-2"}`}>
+            <div className={`grid grid-cols-2 shrink-0 ${isInPopup ? "gap-x-2 gap-y-1" : "gap-x-3 gap-y-1.5"}`}>
               <StatBar
                 label={t("petWindow.hunger")}
                 value={petState.hunger}
