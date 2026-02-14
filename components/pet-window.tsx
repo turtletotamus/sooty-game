@@ -145,6 +145,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
       return 1;
     }
   })();
+  const isInPopup = typeof window !== "undefined" && window.self !== window.top;
   const [petName, setPetName] = useState("Sooty");
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(petName);
@@ -192,49 +193,6 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
     if (showSettingsMenu) document.addEventListener("click", close);
     return () => document.removeEventListener("click", close);
   }, [showSettingsMenu]);
-
-  // ESC = 回到上一層（關閉番茄鐘／呼吸／設定等），不關閉整個視窗
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (isPomodoroOpen) {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsPomodoroOpen(false);
-        return;
-      }
-      if (isBreathingOpen) {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsBreathingOpen(false);
-        return;
-      }
-      if (isCustomizerOpen) {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsCustomizerOpen(false);
-        return;
-      }
-      if (showSettingsMenu) {
-        e.preventDefault();
-        e.stopPropagation();
-        setShowSettingsMenu(false);
-        return;
-      }
-      if (isWalking) {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsWalking(false);
-        return;
-      }
-      if (isInPopup) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown, true);
-    return () => document.removeEventListener("keydown", handleKeyDown, true);
-  }, [isPomodoroOpen, isBreathingOpen, isCustomizerOpen, showSettingsMenu, isWalking, isInPopup]);
 
   // 擴充 popup 傳來陪伴模式狀態：由 parent 的 postMessage 更新（關閉陪伴時會送 COMPANION_STATE）
   useEffect(() => {
@@ -288,6 +246,49 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
   const [walkHidden, setWalkHidden] = useState(false);
   const [walkPos, setWalkPos] = useState({ x: 0, y: 0 });
   const walkAreaRef = useRef<HTMLDivElement>(null);
+
+  // ESC = 回到上一層（關閉番茄鐘／呼吸／設定等），不關閉整個視窗
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (isPomodoroOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsPomodoroOpen(false);
+        return;
+      }
+      if (isBreathingOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsBreathingOpen(false);
+        return;
+      }
+      if (isCustomizerOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsCustomizerOpen(false);
+        return;
+      }
+      if (showSettingsMenu) {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowSettingsMenu(false);
+        return;
+      }
+      if (isWalking) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsWalking(false);
+        return;
+      }
+      if (isInPopup) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => document.removeEventListener("keydown", handleKeyDown, true);
+  }, [isPomodoroOpen, isBreathingOpen, isCustomizerOpen, showSettingsMenu, isWalking, isInPopup]);
 
   // 不再一打開就顯示「想你了」；僅在「離開超過 5 分鐘後回來」時顯示
   useEffect(() => {
@@ -633,7 +634,6 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
 
   const spriteSize = Math.round(SOOT_BASE_SIZE * getSizeMultiplier(age));
   const isOverflowing = spriteSize > 200;
-  const isInPopup = typeof window !== "undefined" && window.self !== window.top;
 
   return (
     <>
