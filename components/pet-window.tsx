@@ -975,9 +975,9 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
         }}
       />
 
-      {/* Floating widget: 僅在「單獨開主站分頁」時顯示；若在擴充功能 popup（iframe）或 embed 頁則不顯示，陪伴改由擴充功能在一般網頁右下角提供 */}
+      {/* Floating widget: 僅在「擴充功能 popup（iframe）」內顯示，讓點擴充功能時右下角有一隻小黑炭；主站分頁不顯示，一般網頁的陪伴由擴充功能 content script 注入 */}
       <AnimatePresence>
-        {showFloatingWidget && !embedMode && typeof window !== "undefined" && window.self === window.top && (
+        {showFloatingWidget && !embedMode && typeof window !== "undefined" && window.self !== window.top && (
           <FloatingWidget
             age={age}
             appearance={appearance}
