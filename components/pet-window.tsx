@@ -32,6 +32,7 @@ interface PetState {
 }
 
 const MAX_STAT = 100;
+const COMPANION_SLEEPING_KEY_PREFIX = "sooty-companion-sleeping-";
 
 // Decay: check every 30 seconds
 const DECAY_INTERVAL = 30000;
@@ -442,6 +443,11 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
 
     // Check if clicking while sleeping (anger trigger)
     if (currentAction === "sleep" && action.id !== "sleep") {
+      try {
+        localStorage.removeItem(COMPANION_SLEEPING_KEY_PREFIX + stateKey);
+      } catch {
+        // ignore
+      }
       setWasWokenUp(true);
       setCurrentAction(null);
       setIsPerformingAction(false);
@@ -451,6 +457,13 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
 
     setIsPerformingAction(true);
     setCurrentAction(action.id);
+    if (action.id === "sleep") {
+      try {
+        localStorage.setItem(COMPANION_SLEEPING_KEY_PREFIX + stateKey, "1");
+      } catch {
+        // ignore
+      }
+    }
 
     // Feed/drink: falling emoji + pet runs toward it
     if (action.id === "feed") {
@@ -483,6 +496,13 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
     }));
 
     setTimeout(() => {
+      if (action.id === "sleep") {
+        try {
+          localStorage.removeItem(COMPANION_SLEEPING_KEY_PREFIX + stateKey);
+        } catch {
+          // ignore
+        }
+      }
       setIsPerformingAction(false);
       setCurrentAction(null);
       setFallingItem(null);
@@ -497,6 +517,11 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
 
     // If sleeping and clicked, wake up angry
     if (currentAction === "sleep") {
+      try {
+        localStorage.removeItem(COMPANION_SLEEPING_KEY_PREFIX + stateKey);
+      } catch {
+        // ignore
+      }
       setWasWokenUp(true);
       setCurrentAction(null);
       setIsPerformingAction(false);

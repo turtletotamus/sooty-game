@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { SootSprite, type EmotionType } from "@/components/soot-sprite";
 import {
@@ -14,14 +14,17 @@ import {
 import type { SootAppearance, SootShape } from "@/components/soot-sprite";
 
 const MAX_STAT = 100;
+const COMPANION_SLEEPING_KEY_PREFIX = "sooty-companion-sleeping-";
 
 /**
  * 右下角陪伴模式：只顯示一隻小黑炭，表情與主視窗一致（同一 state），點擊會跳一下並更新幸福與 lastInteractionTime。
+ * 由 content script 送 COMPANION_TAP 時觸發連跳與醒來。
  */
 export function EmbedCharacterOnly() {
   const searchParams = useSearchParams();
   const sootyId = searchParams?.get?.("sootyId") ?? undefined;
   const stateKey = getStateKey(sootyId);
+  const companionSleepingKey = COMPANION_SLEEPING_KEY_PREFIX + stateKey;
   const validShapes: SootShape[] = ["circle", "square", "star", "triangle", "heart"];
   const appearanceFromUrl = (() => {
     const shape = searchParams?.get?.("shape");
@@ -45,6 +48,53 @@ export function EmbedCharacterOnly() {
 
   const [state, setState] = useState<SavedState | null>(null);
   const [key, setKey] = useState(0);
+  const [externalJumpTrigger, setExternalJumpTrigger] = useState(0);
+  const [isCompanionSleeping, setIsCompanionSleeping] = useState(false);
+
+  const readCompanionSleeping = useCallback(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(companionSleepingKey) === "1";
+  }, [companionSleepingKey]);
+
+  useEffect(() => {
+    setIsCompanionSleeping(readCompanionSleeping());
+  }, [readCompanionSleeping]);
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === companionSleepingKey) setIsCompanionSleeping(readCompanionSleeping());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [companionSleepingKey, readCompanionSleeping]);
+
+  const jumpTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type !== "COMPANION_TAP" || e.source !== window.parent) return;
+      handleClick();
+      if (isCompanionSleeping) {
+        try {
+          localStorage.removeItem(companionSleepingKey);
+        } catch {
+          // ignore
+        }
+        setIsCompanionSleeping(false);
+      }
+      jumpTimeoutsRef.current.forEach((id) => clearTimeout(id));
+      jumpTimeoutsRef.current = [];
+      setExternalJumpTrigger(Date.now());
+      const t1 = setTimeout(() => setExternalJumpTrigger((t) => t + 1), 380);
+      const t2 = setTimeout(() => setExternalJumpTrigger((t) => t + 2), 760);
+      jumpTimeoutsRef.current = [t1, t2];
+    };
+    window.addEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      jumpTimeoutsRef.current.forEach((id) => clearTimeout(id));
+      jumpTimeoutsRef.current = [];
+    };
+  }, [handleClick, isCompanionSleeping, companionSleepingKey]);
 
   useEffect(() => {
     const loaded = loadState(stateKey);
@@ -150,12 +200,13 @@ export function EmbedCharacterOnly() {
         emotion={emotion}
         currentAction={null}
         isEating={false}
-        isSleeping={false}
+        isSleeping={isCompanionSleeping}
         onClick={() => {}}
         age={state.age}
         appearance={(appearanceFromUrl ?? state.appearance) as SootAppearance}
         mouthDown={mouthDown}
         maxSizeScale={maxSizeScale}
+        externalJumpTrigger={externalJumpTrigger}
       />
     </div>
   );

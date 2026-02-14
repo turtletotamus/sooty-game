@@ -26,6 +26,8 @@ interface SootSpriteProps {
   mouthDown?: boolean;
   /** Cap max size to this ratio (e.g. 0.8 = 80% of original max size). From URL ?maxSize=0.8 */
   maxSizeScale?: number;
+  /** When set (e.g. Date.now()), triggers one jump from outside (e.g. companion tap from content script). */
+  externalJumpTrigger?: number;
 }
 
 function clamp01(n: number) {
@@ -166,6 +168,7 @@ export function SootSprite({
   appearance,
   mouthDown = false,
   maxSizeScale = 1,
+  externalJumpTrigger,
 }: SootSpriteProps) {
   const controls = useAnimation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -305,6 +308,11 @@ export function SootSprite({
     }, 120);
     onClick();
   }, [onClick, squashX, squashY]);
+
+  // External trigger for jump (e.g. companion tap from content script)
+  useEffect(() => {
+    if (externalJumpTrigger) handleClick();
+  }, [externalJumpTrigger, handleClick]);
 
   // Emotion and action based body animations
   useEffect(() => {
