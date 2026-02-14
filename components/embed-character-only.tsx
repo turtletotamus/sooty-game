@@ -68,34 +68,6 @@ export function EmbedCharacterOnly() {
     return () => window.removeEventListener("storage", onStorage);
   }, [companionSleepingKey, readCompanionSleeping]);
 
-  const jumpTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  useEffect(() => {
-    const onMessage = (e: MessageEvent) => {
-      if (e.data?.type !== "COMPANION_TAP" || e.source !== window.parent) return;
-      handleClick();
-      if (isCompanionSleeping) {
-        try {
-          localStorage.removeItem(companionSleepingKey);
-        } catch {
-          // ignore
-        }
-        setIsCompanionSleeping(false);
-      }
-      jumpTimeoutsRef.current.forEach((id) => clearTimeout(id));
-      jumpTimeoutsRef.current = [];
-      setExternalJumpTrigger(Date.now());
-      const t1 = setTimeout(() => setExternalJumpTrigger((t) => t + 1), 380);
-      const t2 = setTimeout(() => setExternalJumpTrigger((t) => t + 2), 760);
-      jumpTimeoutsRef.current = [t1, t2];
-    };
-    window.addEventListener("message", onMessage);
-    return () => {
-      window.removeEventListener("message", onMessage);
-      jumpTimeoutsRef.current.forEach((id) => clearTimeout(id));
-      jumpTimeoutsRef.current = [];
-    };
-  }, [handleClick, isCompanionSleeping, companionSleepingKey]);
-
   useEffect(() => {
     const loaded = loadState(stateKey);
     setState(loaded ?? DEFAULT_SAVED_STATE);
@@ -169,6 +141,34 @@ export function EmbedCharacterOnly() {
     persist(next);
     setKey((k) => k + 1);
   }, [state, persist]);
+
+  const jumpTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type !== "COMPANION_TAP" || e.source !== window.parent) return;
+      handleClick();
+      if (isCompanionSleeping) {
+        try {
+          localStorage.removeItem(companionSleepingKey);
+        } catch {
+          // ignore
+        }
+        setIsCompanionSleeping(false);
+      }
+      jumpTimeoutsRef.current.forEach((id) => clearTimeout(id));
+      jumpTimeoutsRef.current = [];
+      setExternalJumpTrigger(Date.now());
+      const t1 = setTimeout(() => setExternalJumpTrigger((t) => t + 1), 380);
+      const t2 = setTimeout(() => setExternalJumpTrigger((t) => t + 2), 760);
+      jumpTimeoutsRef.current = [t1, t2];
+    };
+    window.addEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      jumpTimeoutsRef.current.forEach((id) => clearTimeout(id));
+      jumpTimeoutsRef.current = [];
+    };
+  }, [handleClick, isCompanionSleeping, companionSleepingKey]);
 
   if (!state) {
     return (
