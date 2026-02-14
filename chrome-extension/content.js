@@ -40,8 +40,8 @@
     handle.style.top = (r.top + r.height / 2) + 'px';
     handle.style.right = 'auto';
     handle.style.bottom = 'auto';
-    handle.style.marginLeft = '-12px';
-    handle.style.marginTop = '-12px';
+    handle.style.marginLeft = '-14px';
+    handle.style.marginTop = '-14px';
   }
 
   function ensureSootyId(cb) {
@@ -168,18 +168,17 @@
       '}',
       '#' + HANDLE_ID + ' {',
       '  position: fixed !important;',
-      '  width: 24px !important;',
-      '  height: 24px !important;',
+      '  width: 28px !important;',
+      '  height: 28px !important;',
       '  border-radius: 50% !important;',
       '  cursor: move !important;',
       '  pointer-events: auto !important;',
       '  background: transparent !important;',
       '  border: none !important;',
+      '  box-shadow: none !important;',
+      '  outline: none !important;',
       '  z-index: 2147483647 !important;',
       '  box-sizing: border-box !important;',
-      '}',
-      '#' + HANDLE_ID + ':hover {',
-      '  background: rgba(0,0,0,0.06) !important;',
       '}',
       '#' + HANDLE_ID + '::after {',
       '  display: none !important;',
