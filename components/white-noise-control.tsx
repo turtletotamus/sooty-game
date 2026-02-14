@@ -8,5 +8,5 @@ interface WhiteNoiseControlProps {
 
 /** Background sound dropdown selector (same as Pomodoro). */
 export function WhiteNoiseControl({ alignDropdownRight = true }: WhiteNoiseControlProps) {
-  return <BackgroundSoundDropdown />;
+  return <BackgroundSoundDropdown alignDropdownRight={alignDropdownRight} />;
 }

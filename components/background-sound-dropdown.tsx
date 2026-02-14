@@ -8,7 +8,12 @@ import type { BackgroundSoundType } from "@/components/background-sound-context"
 
 const SOUND_OPTIONS: BackgroundSoundType[] = ["none", "tick", "rain", "fire"];
 
-export function BackgroundSoundDropdown() {
+interface BackgroundSoundDropdownProps {
+  /** 在 popup 右側工具列時設為 true，下拉改為右對齊避免超出視窗 */
+  alignDropdownRight?: boolean;
+}
+
+export function BackgroundSoundDropdown({ alignDropdownRight = false }: BackgroundSoundDropdownProps = {}) {
   const { t } = useLanguage();
   const { type, setType } = useBackgroundSound();
   const [showMenu, setShowMenu] = useState(false);
@@ -49,7 +54,7 @@ export function BackgroundSoundDropdown() {
       </button>
       {showMenu && (
         <div
-          className="absolute top-full left-0 mt-1 py-1 min-w-[120px] bg-card border border-border rounded-lg shadow-lg z-50 flex flex-col"
+          className={`absolute top-full mt-1 py-1 min-w-[120px] bg-card border border-border rounded-lg shadow-lg z-50 flex flex-col ${alignDropdownRight ? "right-0 left-auto" : "left-0"}`}
           onClick={(e) => e.stopPropagation()}
         >
           {SOUND_OPTIONS.map((opt) => (

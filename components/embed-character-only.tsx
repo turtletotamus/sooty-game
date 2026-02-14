@@ -51,14 +51,18 @@ export function EmbedCharacterOnly() {
     setState(loaded ?? DEFAULT_SAVED_STATE);
   }, [stateKey]);
 
-  // 與主視窗同一份 state：每 30 秒從 storage 讀取（含補算衰減）並寫回，僅開 embed 時數值也會衰減
+  // 與主視窗同一份 state（肚子餓／口渴／難過／沒力氣會反映在表情與 mouthDown）：每 30 秒從 storage 讀取並寫回
   useEffect(() => {
     const t = setInterval(() => {
       const loaded = loadState(stateKey);
-      if (loaded) {
-        setState(loaded);
-        saveState(stateKey, { ...loaded, lastSavedAt: Date.now() });
-      }
+      if (!loaded) return;
+      setState((prev) => {
+        if (!prev || prev.lastSavedAt !== loaded.lastSavedAt || prev.petState.hunger !== loaded.petState.hunger || prev.petState.thirst !== loaded.petState.thirst || prev.petState.happiness !== loaded.petState.happiness || prev.petState.energy !== loaded.petState.energy) {
+          return loaded;
+        }
+        return prev;
+      });
+      saveState(stateKey, { ...loaded, lastSavedAt: Date.now() });
     }, 30000);
     return () => clearInterval(t);
   }, [stateKey]);

@@ -42,12 +42,17 @@ window.addEventListener('message', function (e) {
     chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: true }, function () {
       getActiveBrowserTab(function (tab) {
         if (!tab) { window.close(); return; }
-        chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['config.js', 'content.js'] }).catch(function () {}).then(function () {
-          setTimeout(function () {
-            chrome.tabs.sendMessage(tab.id, 'showCompanion').catch(function () {});
-          }, 150);
+        function showCompanionAndClose() {
+          chrome.tabs.sendMessage(tab.id, 'showCompanion').catch(function () {});
           window.close();
-        });
+        }
+        if (chrome.scripting && typeof chrome.scripting.executeScript === 'function') {
+          chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['config.js', 'content.js'] }).catch(function () {}).then(function () {
+            setTimeout(showCompanionAndClose, 150);
+          });
+        } else {
+          setTimeout(showCompanionAndClose, 80);
+        }
       });
     });
   }

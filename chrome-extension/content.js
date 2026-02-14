@@ -7,6 +7,7 @@
   const COMPANION_VISIBLE_KEY = 'sootyCompanionVisible';
   const SOOTY_APPEARANCE_KEY = 'sootyAppearance';
   const CONTAINER_ID = 'sooty-extension-root';
+  const CSP_LOAD_TIMEOUT_MS = 2500;
   const EMBED_URL = typeof SOOTY_EMBED_URL !== 'undefined' ? SOOTY_EMBED_URL : 'https://sooty-game.vercel.app/embed';
 
   function isSootyPage() {
@@ -43,6 +44,38 @@
     return url.toString();
   }
 
+  function setIframeSrcAndDetectCsp(wrap, iframeEl, url) {
+    if (wrap._sootyCspTimeout) {
+      clearTimeout(wrap._sootyCspTimeout);
+      wrap._sootyCspTimeout = null;
+    }
+    function onLoaded() {
+      if (wrap._sootyCspTimeout) clearTimeout(wrap._sootyCspTimeout);
+      wrap._sootyCspTimeout = null;
+      wrap.classList.remove('sooty-csp-blocked');
+      var msg = wrap.querySelector('.sooty-csp-msg');
+      if (msg) msg.remove();
+      iframeEl.style.display = '';
+    }
+    function onBlocked() {
+      wrap.classList.add('sooty-csp-blocked');
+      iframeEl.style.display = 'none';
+      var msg = wrap.querySelector('.sooty-csp-msg');
+      if (!msg) {
+        msg = document.createElement('div');
+        msg.className = 'sooty-csp-msg';
+        msg.textContent = '此頁面不允許顯示陪伴模式（網站安全設定）';
+        wrap.appendChild(msg);
+      }
+    }
+    iframeEl.addEventListener('load', onLoaded, { once: true });
+    wrap._sootyCspTimeout = setTimeout(function () {
+      wrap._sootyCspTimeout = null;
+      onBlocked();
+    }, CSP_LOAD_TIMEOUT_MS);
+    iframeEl.src = url;
+  }
+
   function createWidget() {
     if (getContainer()) return;
 
@@ -75,6 +108,20 @@
       '  display: block !important;',
       '  pointer-events: auto !important;',
       '  background: transparent !important;',
+      '}',
+      '#${CONTAINER_ID}.sooty-csp-blocked {',
+      '  width: auto !important;',
+      '  height: auto !important;',
+      '  max-width: 260px !important;',
+      '}',
+      '#${CONTAINER_ID}.sooty-csp-blocked .sooty-csp-msg {',
+      '  padding: 10px 12px;',
+      '  font-size: 12px;',
+      '  color: #666;',
+      '  background: #f5f5f5;',
+      '  border-radius: 8px;',
+      '  box-shadow: 0 2px 8px rgba(0,0,0,0.1);',
+      '  pointer-events: auto !important;',
       '}'
     ].join('').replace(/\$\{CONTAINER_ID\}/g, CONTAINER_ID);
     document.head.appendChild(style);
@@ -90,24 +137,23 @@
       if (!sootyId) {
         ensureSootyId(function (id) {
           chrome.storage.local.get([SOOTY_APPEARANCE_KEY], function (r2) {
-            iframe.src = buildEmbedUrl(id, r2[SOOTY_APPEARANCE_KEY]);
+            setIframeSrcAndDetectCsp(wrap, iframe, buildEmbedUrl(id, r2[SOOTY_APPEARANCE_KEY]));
           });
         });
       } else {
-        iframe.src = buildEmbedUrl(sootyId, r[SOOTY_APPEARANCE_KEY]);
+        setIframeSrcAndDetectCsp(wrap, iframe, buildEmbedUrl(sootyId, r[SOOTY_APPEARANCE_KEY]));
       }
     });
   }
 
   function showCompanion() {
-    // 使用者主動按「陪伴模式」時一律顯示；僅在「新分頁自動載入」時跳過主站頁面（見 tryShowCompanionIfOn）
     var el = getContainer();
     if (el) {
       el.style.display = 'block';
       var ifr = el.querySelector('iframe');
       if (ifr) {
         chrome.storage.local.get([SOOTY_ID_KEY, SOOTY_APPEARANCE_KEY], function (r) {
-          if (r[SOOTY_ID_KEY]) ifr.src = buildEmbedUrl(r[SOOTY_ID_KEY], r[SOOTY_APPEARANCE_KEY]);
+          if (r[SOOTY_ID_KEY]) setIframeSrcAndDetectCsp(el, ifr, buildEmbedUrl(r[SOOTY_ID_KEY], r[SOOTY_APPEARANCE_KEY]));
         });
       }
     } else {
@@ -128,7 +174,7 @@
     var ifr = el.querySelector('iframe');
     if (ifr) {
       chrome.storage.local.get([SOOTY_ID_KEY, SOOTY_APPEARANCE_KEY], function (r) {
-        if (r[SOOTY_ID_KEY]) ifr.src = buildEmbedUrl(r[SOOTY_ID_KEY], r[SOOTY_APPEARANCE_KEY]);
+        if (r[SOOTY_ID_KEY]) setIframeSrcAndDetectCsp(el, ifr, buildEmbedUrl(r[SOOTY_ID_KEY], r[SOOTY_APPEARANCE_KEY]));
       });
     }
   }

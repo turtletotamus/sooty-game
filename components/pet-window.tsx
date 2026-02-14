@@ -289,16 +289,10 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
   const [walkPos, setWalkPos] = useState({ x: 0, y: 0 });
   const walkAreaRef = useRef<HTMLDivElement>(null);
 
-  // Show greeting when user first opens or returns to the app（擴充 popup 內不顯示「想你了」通知）
+  // 不再一打開就顯示「想你了」；僅在「離開超過 5 分鐘後回來」時顯示
   useEffect(() => {
     if (typeof window !== "undefined" && window.self !== window.top) return;
-    if (!hasShownGreeting.current) {
-      hasShownGreeting.current = true;
-      setShowGreeting(true);
-      setIsPureJoy(true);
-      showNotification(t("notifications.missedYou", { name: petName }));
-      setTimeout(() => setShowGreeting(false), 3000);
-    }
+    if (!hasShownGreeting.current) hasShownGreeting.current = true;
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -648,7 +642,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
         animate={{ opacity: 1, scale: 1 }}
         className={`w-full max-w-sm mx-auto ${isInPopup ? "max-h-[100vh] overflow-hidden flex flex-col" : ""}`}
       >
-        <Card className={`flex flex-col min-h-0 ${isInPopup ? "border-0 shadow-none rounded-none bg-[#f0f0f0] dark:bg-[#1a1a1a] max-h-[100vh] flex-1" : "border-0 shadow-2xl bg-card/95 backdrop-blur"} ${isOverflowing && !isInPopup ? "overflow-visible" : "overflow-hidden"}`}>
+        <Card className={`flex flex-col min-h-0 ${isInPopup ? "border-0 shadow-none rounded-none outline-none ring-0 bg-[#f0f0f0] dark:bg-[#1a1a1a] max-h-[100vh] flex-1 overflow-hidden" : "border-0 shadow-2xl bg-card/95 backdrop-blur"} ${!isInPopup && isOverflowing ? "overflow-visible" : "overflow-hidden"}`}>
           {/* Window Title Bar */}
           <div className={`bg-secondary/50 flex items-center justify-between border-b border-border/50 shrink-0 ${isInPopup ? "px-2 py-1.5" : "px-4 py-2"}`}>
             <div className="flex items-center gap-2">
@@ -706,7 +700,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
                   </div>
                 </div>
               )}
-              <WhiteNoiseControl alignDropdownRight />
+              <WhiteNoiseControl alignDropdownRight={isInPopup} />
             </div>
           </div>
 
