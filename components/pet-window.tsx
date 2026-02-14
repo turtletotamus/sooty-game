@@ -193,6 +193,49 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
     return () => document.removeEventListener("click", close);
   }, [showSettingsMenu]);
 
+  // ESC = 回到上一層（關閉番茄鐘／呼吸／設定等），不關閉整個視窗
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (isPomodoroOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsPomodoroOpen(false);
+        return;
+      }
+      if (isBreathingOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsBreathingOpen(false);
+        return;
+      }
+      if (isCustomizerOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsCustomizerOpen(false);
+        return;
+      }
+      if (showSettingsMenu) {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowSettingsMenu(false);
+        return;
+      }
+      if (isWalking) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsWalking(false);
+        return;
+      }
+      if (isInPopup) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => document.removeEventListener("keydown", handleKeyDown, true);
+  }, [isPomodoroOpen, isBreathingOpen, isCustomizerOpen, showSettingsMenu, isWalking, isInPopup]);
+
   // 擴充 popup 傳來陪伴模式狀態：由 parent 的 postMessage 更新（關閉陪伴時會送 COMPANION_STATE）
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
@@ -246,24 +289,20 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
   const [walkPos, setWalkPos] = useState({ x: 0, y: 0 });
   const walkAreaRef = useRef<HTMLDivElement>(null);
 
-  // Show greeting when user first opens or returns to the app
+  // Show greeting when user first opens or returns to the app（擴充 popup 內不顯示「想你了」通知）
   useEffect(() => {
+    if (typeof window !== "undefined" && window.self !== window.top) return;
     if (!hasShownGreeting.current) {
       hasShownGreeting.current = true;
       setShowGreeting(true);
       setIsPureJoy(true);
       showNotification(t("notifications.missedYou", { name: petName }));
-      
-      setTimeout(() => {
-        setShowGreeting(false);
-      }, 3000);
+      setTimeout(() => setShowGreeting(false), 3000);
     }
 
-    // Also detect tab visibility for return greeting
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         const timeAway = Date.now() - lastInteractionTime;
-        // If away for more than 5 minutes, show greeting
         if (timeAway > 5 * 60 * 1000) {
           setShowGreeting(true);
           setIsPureJoy(true);
@@ -609,7 +648,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
         animate={{ opacity: 1, scale: 1 }}
         className={`w-full max-w-sm mx-auto ${isInPopup ? "max-h-[100vh] overflow-hidden flex flex-col" : ""}`}
       >
-        <Card className={`border-2 border-border/50 shadow-2xl bg-card/95 backdrop-blur flex flex-col min-h-0 ${isOverflowing && !isInPopup ? "overflow-visible" : "overflow-hidden"} ${isInPopup ? "max-h-[100vh] flex-1" : ""}`}>
+        <Card className={`flex flex-col min-h-0 ${isInPopup ? "border-0 shadow-none rounded-none bg-[#f0f0f0] dark:bg-[#1a1a1a] max-h-[100vh] flex-1" : "border-0 shadow-2xl bg-card/95 backdrop-blur"} ${isOverflowing && !isInPopup ? "overflow-visible" : "overflow-hidden"}`}>
           {/* Window Title Bar */}
           <div className={`bg-secondary/50 flex items-center justify-between border-b border-border/50 shrink-0 ${isInPopup ? "px-2 py-1.5" : "px-4 py-2"}`}>
             <div className="flex items-center gap-2">

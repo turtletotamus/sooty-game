@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { useBackgroundSound } from "@/components/background-sound-context";
 import { BackgroundSoundIcon } from "@/components/background-sound-icon";
 import { useLanguage } from "@/components/language-context";
-import { ChevronDown } from "lucide-react";
 import type { BackgroundSoundType } from "@/components/background-sound-context";
 
 const SOUND_OPTIONS: BackgroundSoundType[] = ["none", "tick", "rain", "fire"];
@@ -39,15 +38,14 @@ export function BackgroundSoundDropdown() {
           e.stopPropagation();
           setShowMenu((v) => !v);
         }}
-        className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors text-sm ${
+        className={`flex items-center justify-center p-1.5 rounded transition-colors ${
           type !== "none"
             ? "bg-primary/20 text-primary hover:bg-primary/30"
             : "hover:bg-muted text-muted-foreground"
         }`}
         title={t("pomodoro.backgroundSound")}
       >
-        <BackgroundSoundIcon type={type} className="w-3.5 h-3.5" />
-        <ChevronDown className={`w-3 h-3 transition-transform ${showMenu ? "rotate-180" : ""}`} />
+        <BackgroundSoundIcon type={type} className="w-4 h-4" />
       </button>
       {showMenu && (
         <div

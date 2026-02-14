@@ -39,13 +39,15 @@ function getActiveBrowserTab(cb) {
 window.addEventListener('message', function (e) {
   if (!e.data || !e.data.type) return;
   if (e.data.type === 'OPEN_COMPANION') {
-    getActiveBrowserTab(function (tab) {
-      if (!tab) { window.close(); return; }
-      chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['config.js', 'content.js'] }).catch(function () {}).then(function () {
-        setTimeout(function () {
-          chrome.tabs.sendMessage(tab.id, 'showCompanion').catch(function () {});
-        }, 80);
-        window.close();
+    chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: true }, function () {
+      getActiveBrowserTab(function (tab) {
+        if (!tab) { window.close(); return; }
+        chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['config.js', 'content.js'] }).catch(function () {}).then(function () {
+          setTimeout(function () {
+            chrome.tabs.sendMessage(tab.id, 'showCompanion').catch(function () {});
+          }, 150);
+          window.close();
+        });
       });
     });
   }

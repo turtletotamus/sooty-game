@@ -67,7 +67,7 @@ export function BackgroundSoundProvider({ children }: { children: React.ReactNod
   useEffect(() => {
     setMounted(true);
     const stored = loadStored();
-    setTypeState(stored.type);
+    setTypeState("none");
     setVolume(stored.volume);
   }, []);
 
