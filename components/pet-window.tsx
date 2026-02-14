@@ -615,6 +615,19 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
               <span className="text-xs font-normal text-muted-foreground">v{APP_VERSION}</span>
             </div>
             <div className="relative flex items-center gap-1" ref={settingsMenuRef}>
+              {typeof window !== "undefined" && window.self !== window.top && (
+                <button
+                  type="button"
+                  className="px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-primary/20 hover:text-primary text-muted-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    try { window.parent.postMessage({ type: "OPEN_COMPANION" }, "*"); } catch (_) {}
+                  }}
+                  title={t("petWindow.widgetTitle")}
+                >
+                  {t("petWindow.widget")}
+                </button>
+              )}
               <button
                 type="button"
                 className={`p-1 rounded transition-colors ${showSettingsMenu ? "bg-primary/20 text-primary" : "hover:bg-muted text-muted-foreground"}`}
@@ -975,9 +988,9 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
         }}
       />
 
-      {/* Floating widget: 僅在「擴充功能 popup（iframe）」內顯示，讓點擴充功能時右下角有一隻小黑炭；主站分頁不顯示，一般網頁的陪伴由擴充功能 content script 注入 */}
+      {/* Floating widget: 僅在「單獨開主站分頁」時顯示；在擴充 popup（iframe）內不顯示，改由「陪伴模式」按鈕關閉 popup 並在目前分頁顯示 */}
       <AnimatePresence>
-        {showFloatingWidget && !embedMode && typeof window !== "undefined" && window.self !== window.top && (
+        {showFloatingWidget && !embedMode && typeof window !== "undefined" && window.self === window.top && (
           <FloatingWidget
             age={age}
             appearance={appearance}
