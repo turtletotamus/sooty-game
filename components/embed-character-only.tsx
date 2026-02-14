@@ -51,7 +51,25 @@ export function EmbedCharacterOnly() {
     setState(loaded ?? DEFAULT_SAVED_STATE);
   }, [stateKey]);
 
-  // 與主視窗同一份 state（肚子餓／口渴／難過／沒力氣會反映在表情與 mouthDown）：每 30 秒從 storage 讀取並寫回
+  // 主視窗寫入 localStorage 時（同 origin 另一 tab/iframe）立即同步情緒與狀態，不必等 30 秒
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== stateKey || e.newValue == null) return;
+      try {
+        const data = JSON.parse(e.newValue) as unknown;
+        if (data && typeof data === "object" && "petState" in data && "lastInteractionTime" in data) {
+          const loaded = loadState(stateKey);
+          if (loaded) setState(loaded);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [stateKey]);
+
+  // 與主視窗同一份 state：每 3 秒從 storage 讀取並寫回，減少情緒同步延遲
   useEffect(() => {
     const t = setInterval(() => {
       const loaded = loadState(stateKey);
@@ -63,8 +81,19 @@ export function EmbedCharacterOnly() {
         return prev;
       });
       saveState(stateKey, { ...loaded, lastSavedAt: Date.now() });
-    }, 30000);
+    }, 3000);
     return () => clearInterval(t);
+  }, [stateKey]);
+
+  // 分頁／視窗回到前景時立即重讀 state，讓情緒與主視窗馬上一致
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      const loaded = loadState(stateKey);
+      if (loaded) setState(loaded);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [stateKey]);
 
   const persist = useCallback(

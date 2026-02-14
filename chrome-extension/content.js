@@ -5,9 +5,12 @@
 (function () {
   const SOOTY_ID_KEY = 'sootyId';
   const COMPANION_VISIBLE_KEY = 'sootyCompanionVisible';
+  const COMPANION_POSITION_KEY = 'sootyCompanionPosition';
   const SOOTY_APPEARANCE_KEY = 'sootyAppearance';
   const CONTAINER_ID = 'sooty-extension-root';
   const CSP_LOAD_TIMEOUT_MS = 2500;
+  const DEFAULT_WIDTH = 160;
+  const DEFAULT_HEIGHT = 200;
   const EMBED_URL = typeof SOOTY_EMBED_URL !== 'undefined' ? SOOTY_EMBED_URL : 'https://sooty-game.vercel.app/embed';
 
   function isSootyPage() {
@@ -42,6 +45,30 @@
     if (appearance && appearance.shape) url.searchParams.set('shape', appearance.shape);
     if (appearance && appearance.color) url.searchParams.set('color', appearance.color);
     return url.toString();
+  }
+
+  function applyPosition(wrap, pos) {
+    if (!wrap) return;
+    if (pos && typeof pos.left === 'number' && typeof pos.top === 'number') {
+      wrap.style.left = pos.left + 'px';
+      wrap.style.top = pos.top + 'px';
+      wrap.style.right = 'auto';
+      wrap.style.bottom = 'auto';
+    } else {
+      wrap.style.left = 'auto';
+      wrap.style.top = 'auto';
+      wrap.style.right = '16px';
+      wrap.style.bottom = '16px';
+    }
+  }
+
+  function clampPosition(left, top, width, height) {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    return {
+      left: Math.max(0, Math.min(left, w - width)),
+      top: Math.max(0, Math.min(top, h - height))
+    };
   }
 
   function setIframeSrcAndDetectCsp(wrap, iframeEl, url) {
@@ -88,8 +115,8 @@
       '  position: fixed !important;',
       '  bottom: 16px !important;',
       '  right: 16px !important;',
-      '  width: 200px !important;',
-      '  height: 240px !important;',
+      '  width: ' + DEFAULT_WIDTH + 'px !important;',
+      '  height: ' + DEFAULT_HEIGHT + 'px !important;',
       '  max-width: calc(100vw - 32px) !important;',
       '  max-height: calc(100vh - 32px) !important;',
       '  z-index: 2147483646 !important;',
@@ -100,6 +127,22 @@
       '  overflow: visible !important;',
       '  font-family: system-ui, sans-serif !important;',
       '  pointer-events: none !important;',
+      '  display: flex !important;',
+      '  flex-direction: column !important;',
+      '}',
+      '#${CONTAINER_ID} .sooty-companion-handle {',
+      '  width: 100% !important;',
+      '  height: 20px !important;',
+      '  min-height: 20px !important;',
+      '  cursor: move !important;',
+      '  pointer-events: auto !important;',
+      '  background: transparent !important;',
+      '  flex-shrink: 0 !important;',
+      '}',
+      '#${CONTAINER_ID} .sooty-companion-iframe-wrap {',
+      '  flex: 1 !important;',
+      '  min-height: 0 !important;',
+      '  pointer-events: auto !important;',
       '}',
       '#${CONTAINER_ID} iframe {',
       '  width: 100% !important;',
@@ -126,13 +169,65 @@
     ].join('').replace(/\$\{CONTAINER_ID\}/g, CONTAINER_ID);
     document.head.appendChild(style);
 
+    var handle = document.createElement('div');
+    handle.className = 'sooty-companion-handle';
+    handle.title = '拖曳移動';
+    handle.setAttribute('aria-label', '拖曳移動陪伴小黑炭');
+
+    var iframeWrap = document.createElement('div');
+    iframeWrap.className = 'sooty-companion-iframe-wrap';
     var iframe = document.createElement('iframe');
     iframe.title = 'Sooty';
+    iframeWrap.appendChild(iframe);
 
-    wrap.appendChild(iframe);
+    wrap.appendChild(handle);
+    wrap.appendChild(iframeWrap);
     document.body.appendChild(wrap);
 
-    chrome.storage.local.get([SOOTY_ID_KEY, SOOTY_APPEARANCE_KEY], function (r) {
+    (function setupDrag() {
+      var dragging = false;
+      var startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+      function getRect() {
+        var w = wrap.offsetWidth || DEFAULT_WIDTH;
+        var h = wrap.offsetHeight || DEFAULT_HEIGHT;
+        return { w: w, h: h };
+      }
+
+      handle.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        dragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        var rect = wrap.getBoundingClientRect();
+        startLeft = rect.left + window.scrollX;
+        startTop = rect.top + window.scrollY;
+      });
+
+      window.addEventListener('mousemove', function (e) {
+        if (!dragging) return;
+        e.preventDefault();
+        var dx = e.clientX - startX;
+        var dy = e.clientY - startY;
+        var r = getRect();
+        var next = clampPosition(startLeft + dx, startTop + dy, r.w, r.h);
+        wrap.style.left = next.left + 'px';
+        wrap.style.top = next.top + 'px';
+        wrap.style.right = 'auto';
+        wrap.style.bottom = 'auto';
+      });
+
+      window.addEventListener('mouseup', function () {
+        if (!dragging) return;
+        dragging = false;
+        var rect = wrap.getBoundingClientRect();
+        chrome.storage.local.set({ [COMPANION_POSITION_KEY]: { left: rect.left, top: rect.top } });
+      });
+    })();
+
+    chrome.storage.local.get([COMPANION_POSITION_KEY, SOOTY_ID_KEY, SOOTY_APPEARANCE_KEY], function (r) {
+      applyPosition(wrap, r[COMPANION_POSITION_KEY]);
       var sootyId = r[SOOTY_ID_KEY];
       if (!sootyId) {
         ensureSootyId(function (id) {
@@ -147,9 +242,13 @@
   }
 
   function showCompanion() {
+    if (isSootyPage()) return;
     var el = getContainer();
     if (el) {
-      el.style.display = 'block';
+      el.style.display = 'flex';
+      chrome.storage.local.get([COMPANION_POSITION_KEY], function (r) {
+        applyPosition(el, r[COMPANION_POSITION_KEY]);
+      });
       var ifr = el.querySelector('iframe');
       if (ifr) {
         chrome.storage.local.get([SOOTY_ID_KEY, SOOTY_APPEARANCE_KEY], function (r) {
@@ -168,24 +267,17 @@
     chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: false });
   }
 
-  function refreshCompanionAppearance() {
-    var el = getContainer();
-    if (!el || el.style.display === 'none') return;
-    var ifr = el.querySelector('iframe');
-    if (ifr) {
-      chrome.storage.local.get([SOOTY_ID_KEY, SOOTY_APPEARANCE_KEY], function (r) {
-        if (r[SOOTY_ID_KEY]) setIframeSrcAndDetectCsp(el, ifr, buildEmbedUrl(r[SOOTY_ID_KEY], r[SOOTY_APPEARANCE_KEY]));
-      });
-    }
-  }
-
   chrome.runtime.onMessage.addListener(function (msg) {
     if (msg === 'showCompanion') showCompanion();
     if (msg === 'hideCompanion') hideCompanion();
-    if (msg === 'refreshCompanionAppearance') refreshCompanionAppearance();
   });
 
-  // 需求 2：若已在其他分頁開啟陪伴模式，新分頁載入時自動顯示同一隻小黑炭（主站頁面不自動顯示，避免重疊）
+  chrome.storage.onChanged.addListener(function (changes, areaName) {
+    if (areaName !== 'local' || !changes[COMPANION_VISIBLE_KEY]) return;
+    if (changes[COMPANION_VISIBLE_KEY].newValue === true) showCompanion();
+    if (changes[COMPANION_VISIBLE_KEY].newValue === false) hideCompanion();
+  });
+
   function tryShowCompanionIfOn() {
     if (isSootyPage()) return;
     chrome.storage.local.get([COMPANION_VISIBLE_KEY], function (r) {

@@ -58,14 +58,15 @@ function mix(hexA: string, hexB: string, t: number) {
   return rgbToHex({ r, g, b: bb });
 }
 
-function getClipPath(shape: SootShape): string | undefined {
+/** 供呼吸模式等依造型繪製形狀時使用 */
+export function getClipPath(shape: SootShape): string | undefined {
   switch (shape) {
     case "triangle":
       return "polygon(50% 3%, 3% 97%, 97% 97%)";
     case "star":
       return "polygon(50% 2%, 61% 35%, 96% 35%, 68% 56%, 78% 90%, 50% 70%, 22% 90%, 32% 56%, 4% 35%, 39% 35%)";
     case "heart":
-      // Heart uses SVG clipPath (objectBoundingBox) rendered in component so it fills the element; see soot body JSX.
+      // Heart 在 SootSprite 用 SVG 繪製；呼吸模式用 rounded 當 fallback
       return undefined;
     case "square":
     case "circle":

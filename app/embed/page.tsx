@@ -9,8 +9,8 @@ import { EmbedCharacterOnly } from "@/components/embed-character-only";
  */
 export default function EmbedPage() {
   return (
-    <main className="min-h-screen min-w-[120px] bg-transparent flex items-center justify-center p-0">
-      <div className="w-full h-full min-h-[200px] flex items-center justify-center">
+    <main className="h-full min-h-0 min-w-[120px] w-full bg-transparent flex items-center justify-center p-0">
+      <div className="w-full h-full min-h-[160px] flex items-center justify-center flex-1 min-h-0 overflow-hidden">
         <Suspense fallback={<div className="min-h-[200px] flex items-center justify-center text-muted-foreground">...</div>}>
           <EmbedCharacterOnly />
         </Suspense>

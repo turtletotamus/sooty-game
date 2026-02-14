@@ -640,9 +640,9 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className={`w-full max-w-sm mx-auto ${isInPopup ? "max-h-[100vh] overflow-hidden flex flex-col" : ""}`}
+        className={`w-full max-w-sm mx-auto ${isInPopup ? "h-full max-h-[100vh] overflow-hidden flex flex-col min-h-0" : ""}`}
       >
-        <Card className={`flex flex-col min-h-0 ${isInPopup ? "border-0 shadow-none rounded-none outline-none ring-0 bg-[#f0f0f0] dark:bg-[#1a1a1a] max-h-[100vh] flex-1 overflow-hidden" : "border-0 shadow-2xl bg-card/95 backdrop-blur"} ${!isInPopup && isOverflowing ? "overflow-visible" : "overflow-hidden"}`}>
+        <Card className={`flex flex-col min-h-0 ${isInPopup ? "border-0 shadow-none rounded-none outline-none ring-0 bg-[#f0f0f0] dark:bg-[#1a1a1a] max-h-[100vh] flex-1 overflow-hidden min-h-0" : "border-0 shadow-2xl bg-card/95 backdrop-blur"} ${!isInPopup && isOverflowing ? "overflow-visible" : "overflow-hidden"}`}>
           {/* Window Title Bar */}
           <div className={`bg-secondary/50 flex items-center justify-between border-b border-border/50 shrink-0 ${isInPopup ? "px-2 py-1.5" : "px-4 py-2"}`}>
             <div className="flex items-center gap-2">
@@ -998,6 +998,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
         onClose={() => setIsBreathingOpen(false)}
         onComplete={handleBreathingComplete}
         petName={petName}
+        appearance={appearance}
       />
 
       {/* Pomodoro Timer Modal */}

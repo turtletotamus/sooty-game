@@ -5,12 +5,17 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Wind } from "lucide-react";
 import { useLanguage } from "@/components/language-context";
+import { getClipPath, type SootAppearance, type SootShape } from "@/components/soot-sprite";
+
+const DEFAULT_BREATH_APPEARANCE: SootAppearance = { shape: "circle", color: "#2a2a2a" };
 
 interface BreathingExerciseProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
   petName: string;
+  /** 依造型顯示呼吸動畫（形狀與顏色）；未傳則用預設黑圓 */
+  appearance?: SootAppearance;
 }
 
 type BreathPhase = "inhale" | "hold" | "exhale" | "rest";
@@ -31,8 +36,9 @@ const phaseLabelKey: Record<BreathPhase, string> = {
   rest: "rest",
 };
 
-export function BreathingExercise({ isOpen, onClose, onComplete, petName }: BreathingExerciseProps) {
+export function BreathingExercise({ isOpen, onClose, onComplete, petName, appearance: appearanceProp }: BreathingExerciseProps) {
   const { t } = useLanguage();
+  const appearance = appearanceProp ?? DEFAULT_BREATH_APPEARANCE;
   const [phase, setPhase] = useState<BreathPhase>("inhale");
   const [countdown, setCountdown] = useState(BREATH_CYCLE.inhale.duration);
   const [cycleCount, setCycleCount] = useState(0);
@@ -120,6 +126,26 @@ export function BreathingExercise({ isOpen, onClose, onComplete, petName }: Brea
     }
   };
 
+  // 呼吸球造型：形狀（圓/方/三角/星/愛心）與顏色
+  const getBreathShapeStyle = (): { className: string; style: Record<string, string | number> } => {
+    const clipPath = getClipPath(appearance.shape as SootShape);
+    const base = "w-16 h-16 relative";
+    const shapeClass =
+      appearance.shape === "circle" || appearance.shape === "heart"
+        ? "rounded-full"
+        : appearance.shape === "square"
+          ? "rounded-md"
+          : "rounded-none";
+    return {
+      className: `${base} ${shapeClass}`,
+      style: {
+        background: appearance.color,
+        boxShadow: `inset 0 2px 8px rgba(0,0,0,0.15)`,
+        ...(clipPath ? { clipPath } : {}),
+      },
+    };
+  };
+
   // Get color based on phase
   const getPhaseColor = () => {
     switch (phase) {
@@ -137,6 +163,8 @@ export function BreathingExercise({ isOpen, onClose, onComplete, petName }: Brea
   };
 
   if (!isOpen) return null;
+
+  const breathShape = getBreathShapeStyle();
 
   return (
     <AnimatePresence>
@@ -250,9 +278,10 @@ export function BreathingExercise({ isOpen, onClose, onComplete, petName }: Brea
                       ease: "easeInOut",
                     }}
                   >
-                    {/* Sooty breathing inside */}
+                    {/* Sooty breathing inside：依造型形狀與顏色 */}
                     <motion.div
-                      className="w-16 h-16 rounded-full bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-900 relative"
+                      className={breathShape.className}
+                      style={breathShape.style}
                       animate={{
                         scale: isActive ? [1, getCircleScale() * 0.85, 1] : 1,
                       }}

@@ -12,7 +12,7 @@ export default function Home() {
   const isInIframe = typeof window !== "undefined" && window.self !== window.top;
   if (isInIframe) {
     return (
-      <main className="h-full min-h-0 w-full overflow-hidden flex items-center justify-center bg-[#f0f0f0] dark:bg-[#1a1a1a]">
+      <main className="h-full min-h-0 w-full overflow-hidden flex flex-col items-center justify-center bg-[#f0f0f0] dark:bg-[#1a1a1a] p-0">
         <Suspense fallback={<div className="text-muted-foreground text-sm">...</div>}>
           <PetWindow />
         </Suspense>
