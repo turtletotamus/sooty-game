@@ -1,15 +1,19 @@
 ---
-description: 改完程式後要 push；若沒 push 要主動說明原因
+description: 改完程式後要 push 並更新版本號；若沒做要主動說明原因
 globs: 
 alwaysApply: true
 ---
 
-# 改完程式後的 Git Push
+# 改完程式後的 Git Push 與版本號
 
-1. **每次改完程式後要 push**
-   - 有改到的 repo 都要執行：`git add` → `git commit`（附清楚訊息）→ `git push`。
+1. **每次改完 sooty-game-main 的程式後，必須在同一輪內完成：**
+   - **更新版本號**：同步修改 `package.json`、`lib/version.ts`、`chrome-extension/manifest.json`、`package-lock.json`（兩處 version）的 version 欄位，patch 往上加一（例如 2.0.8 → 2.0.9）。
+   - **Push**：`git add` 改動檔案（不含 chrome-extension.zip）→ `git commit -m "..."`（訊息含改動重點與 chore: bump to x.y.z）→ `git push`。
+   - 不要只改程式或只改版號就結束，兩者必須一起做完。
+
+2. **有改到的其他 repo 也要 push**
    - 若專案拆成多個 repo（例如主站 sooty-game-main、擴充 sooty-extension），兩個都有改就兩個都 push；只改一個就只 push 那一個。
 
-2. **若沒有 push，要主動向使用者說明原因**
+3. **若沒有 push 或沒有改版號，要主動向使用者說明原因**
    - 例如：該 repo 還沒設定 remote、需要你確認 commit 訊息或範圍、權限不足、不確定要 push 到哪個 branch 等。
    - 不要讓使用者一直重新整理卻不知道為什麼沒 push，避免浪費時間。

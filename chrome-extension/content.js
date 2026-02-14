@@ -40,8 +40,8 @@
     handle.style.top = (r.top + r.height / 2) + 'px';
     handle.style.right = 'auto';
     handle.style.bottom = 'auto';
-    handle.style.marginLeft = '-14px';
-    handle.style.marginTop = '-14px';
+    handle.style.marginLeft = '-48px';
+    handle.style.marginTop = '-48px';
   }
 
   function ensureSootyId(cb) {
@@ -168,8 +168,8 @@
       '}',
       '#' + HANDLE_ID + ' {',
       '  position: fixed !important;',
-      '  width: 28px !important;',
-      '  height: 28px !important;',
+      '  width: 96px !important;',
+      '  height: 96px !important;',
       '  border-radius: 50% !important;',
       '  cursor: move !important;',
       '  pointer-events: auto !important;',
