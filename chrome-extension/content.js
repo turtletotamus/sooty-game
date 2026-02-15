@@ -349,7 +349,12 @@
         try {
           var origin = new URL(EMBED_URL).origin;
           ifr.contentWindow.postMessage({ type: 'SOOTY_STATE_SYNC', stateKey: msg.stateKey, state: msg.state }, origin);
-        } catch (_) {}
+          if (typeof console !== 'undefined') console.log('[Sooty content] 已轉發 SOOTY_STATE_SYNC 給 embed stateKey=' + msg.stateKey);
+        } catch (e) {
+          if (typeof console !== 'undefined') console.log('[Sooty content] 轉發失敗', e);
+        }
+      } else {
+        if (typeof console !== 'undefined') console.log('[Sooty content] 找不到陪伴 iframe，無法轉發 stateKey=' + msg.stateKey);
       }
       return;
     }

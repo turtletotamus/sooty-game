@@ -81,12 +81,14 @@ export function EmbedCharacterOnly() {
     return () => window.removeEventListener("storage", onStorage);
   }, [companionSleepingKey, readCompanionSleeping]);
 
-  // 測試用：embed 一載入就 log，方便使用者確認是否選對 Console 的 iframe
+  // 測試用：embed 一載入就 log sootyId/stateKey，方便比對主視窗
   useEffect(() => {
     if (typeof console !== "undefined") {
-      console.log("[Sooty 陪伴 測試] 你找對地方了！這是陪伴 embed 的 Console。當前網址:", window.location.href);
+      const id = sootyId ?? "default";
+      console.log("[Sooty 陪伴] 陪伴 sootyId=" + id + " stateKey=" + stateKey);
+      console.log("[Sooty 陪伴] 主視窗網址需含 ?sootyId=" + id + " 表情才會同步");
     }
-  }, []);
+  }, [sootyId, stateKey]);
 
   useEffect(() => {
     const loaded = loadState(stateKey);
@@ -271,13 +273,23 @@ export function EmbedCharacterOnly() {
 
   return (
     <div
-      className="w-full h-full flex items-center justify-center bg-transparent cursor-pointer select-none"
+      className="w-full h-full flex items-center justify-center bg-transparent cursor-pointer select-none relative"
       onClick={handleClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && handleClick()}
       aria-label="點擊小黑炭"
     >
+      {/* 除錯用：畫面上直接顯示 sootyId / stateKey / emotion，方便與主視窗比對 */}
+      <div
+        className="absolute bottom-0 left-0 right-0 px-1 py-0.5 text-[9px] font-mono text-left text-black/80 bg-white/85 rounded-t pointer-events-none break-all"
+        aria-hidden
+      >
+        <div>陪伴 sootyId: {sootyId ?? "default"}</div>
+        <div>stateKey: {stateKey}</div>
+        <div>emotion: {emotion} (h={state.petState.hunger} t={state.petState.thirst})</div>
+        <div className="text-black/60">主視窗網址需含 ?sootyId={sootyId ?? "default"} 才會同步</div>
+      </div>
       <SootSprite
         key={key}
         emotion={emotion}

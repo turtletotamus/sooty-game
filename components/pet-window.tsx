@@ -271,6 +271,9 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
           },
         };
         window.parent.postMessage(payload, "*");
+        if (typeof console !== "undefined") {
+          console.log("[Sooty 主視窗] 已送出 SOOTY_STATE_SYNC stateKey=" + stateKey + " hunger=" + petState.hunger);
+        }
       } catch (_) {}
     }
   }, [stateKey, petName, age, petState, appearance, lastInteractionTime, sootyId]);
@@ -717,6 +720,9 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
               <Sparkles className={isInPopup ? "w-3 h-3 text-primary" : "w-4 h-4 text-primary"} />
               <span className={isInPopup ? "text-xs font-medium text-foreground" : "text-sm font-medium text-foreground"}>{t("petWindow.windowTitle")}</span>
               <span className="text-[10px] font-normal text-muted-foreground">v{APP_VERSION}</span>
+              {isInPopup && sootyId && (
+                <span className="text-[10px] font-mono text-muted-foreground" title="與陪伴的 sootyId 需相同才會同步">sootyId: {sootyId}</span>
+              )}
             </div>
             <div className="relative flex items-center gap-1" ref={settingsMenuRef}>
               {typeof window !== "undefined" && window.self !== window.top && (

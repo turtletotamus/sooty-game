@@ -88,6 +88,7 @@ window.addEventListener('message', function (e) {
     }
   }
   if (e.data.type === 'SOOTY_STATE_SYNC' && e.data.stateKey && e.data.state) {
+    if (typeof console !== 'undefined') console.log('[Sooty popup] 收到 SOOTY_STATE_SYNC stateKey=' + e.data.stateKey + '，轉發給所有分頁');
     chrome.tabs.query({}, function (tabs) {
       var payload = { type: 'SOOTY_STATE_SYNC', stateKey: e.data.stateKey, state: e.data.state };
       tabs.forEach(function (t) {
