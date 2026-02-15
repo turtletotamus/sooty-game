@@ -88,13 +88,16 @@ window.addEventListener('message', function (e) {
     }
   }
   if (e.data.type === 'SOOTY_STATE_SYNC' && e.data.stateKey && e.data.state) {
-    if (typeof console !== 'undefined') console.log('[Sooty popup] 收到 SOOTY_STATE_SYNC stateKey=' + e.data.stateKey + '，轉發給所有分頁');
-    chrome.tabs.query({}, function (tabs) {
-      var payload = { type: 'SOOTY_STATE_SYNC', stateKey: e.data.stateKey, state: e.data.state };
-      tabs.forEach(function (t) {
-        if (t.id && t.url && t.url.indexOf('chrome://') !== 0) {
-          chrome.tabs.sendMessage(t.id, payload).catch(function () {});
-        }
+    if (typeof console !== 'undefined') console.log('[Sooty popup] 收到 SOOTY_STATE_SYNC stateKey=' + e.data.stateKey + '，轉發給所有分頁並寫入 storage');
+    var sync = { stateKey: e.data.stateKey, state: e.data.state, ts: Date.now() };
+    chrome.storage.local.set({ sootyStateSync: sync }, function () {
+      chrome.tabs.query({}, function (tabs) {
+        var payload = { type: 'SOOTY_STATE_SYNC', stateKey: e.data.stateKey, state: e.data.state };
+        tabs.forEach(function (t) {
+          if (t.id && t.url && t.url.indexOf('chrome://') !== 0) {
+            chrome.tabs.sendMessage(t.id, payload).catch(function () {});
+          }
+        });
       });
     });
   }

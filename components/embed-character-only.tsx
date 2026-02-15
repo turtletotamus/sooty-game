@@ -90,6 +90,20 @@ export function EmbedCharacterOnly() {
     }
   }, [sootyId, stateKey]);
 
+  // 主動向頁面（content script）請求最新 state（popup 已存 chrome.storage），避免 sendMessage 漏送
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.parent) return;
+    try {
+      window.parent.postMessage({ type: "REQUEST_STATE", stateKey }, "*");
+    } catch (_) {}
+    const t = setInterval(function () {
+      try {
+        window.parent.postMessage({ type: "REQUEST_STATE", stateKey }, "*");
+      } catch (_) {}
+    }, 2000);
+    return () => clearInterval(t);
+  }, [stateKey]);
+
   useEffect(() => {
     const loaded = loadState(stateKey);
     const now = Date.now();

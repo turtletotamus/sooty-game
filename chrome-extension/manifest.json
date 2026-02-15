@@ -3,7 +3,7 @@
   "default_locale": "en",
   "name": "Sooty (小黑炭)",
   "description": "點圖示打開小黑炭視窗；右下角陪伴模式為同一隻小黑炭。",
-  "version": "2.0.23",
+  "version": "2.0.24",
   "permissions": [
     "storage",
     "scripting"

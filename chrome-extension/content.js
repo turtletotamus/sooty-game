@@ -341,18 +341,38 @@
     chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: false });
   }
 
+  function sendStateToEmbed(ifr, stateKey, state) {
+    if (!ifr || !ifr.contentWindow || !stateKey || !state) return;
+    try {
+      var origin = new URL(EMBED_URL).origin;
+      ifr.contentWindow.postMessage({ type: 'SOOTY_STATE_SYNC', stateKey: stateKey, state: state }, origin);
+      if (typeof console !== 'undefined') console.log('[Sooty content] 已轉發 state 給 embed stateKey=' + stateKey);
+    } catch (e) {
+      if (typeof console !== 'undefined') console.log('[Sooty content] 轉發失敗', e);
+    }
+  }
+
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'REQUEST_STATE' && e.data.stateKey) {
+      var el = getContainer();
+      var ifr = el && el.querySelector('iframe');
+      if (!ifr || e.source !== ifr.contentWindow) return;
+      chrome.storage.local.get(['sootyStateSync'], function (r) {
+        var sync = r.sootyStateSync;
+        if (sync && sync.stateKey === e.data.stateKey && sync.state) {
+          sendStateToEmbed(ifr, sync.stateKey, sync.state);
+        }
+      });
+    }
+  });
+
   chrome.runtime.onMessage.addListener(function (msg) {
     if (msg && typeof msg === 'object' && msg.type === 'SOOTY_STATE_SYNC' && msg.stateKey && msg.state) {
+      chrome.storage.local.set({ sootyStateSync: { stateKey: msg.stateKey, state: msg.state, ts: Date.now() } });
       var el = getContainer();
       var ifr = el && el.querySelector('iframe');
       if (ifr && ifr.contentWindow) {
-        try {
-          var origin = new URL(EMBED_URL).origin;
-          ifr.contentWindow.postMessage({ type: 'SOOTY_STATE_SYNC', stateKey: msg.stateKey, state: msg.state }, origin);
-          if (typeof console !== 'undefined') console.log('[Sooty content] 已轉發 SOOTY_STATE_SYNC 給 embed stateKey=' + msg.stateKey);
-        } catch (e) {
-          if (typeof console !== 'undefined') console.log('[Sooty content] 轉發失敗', e);
-        }
+        sendStateToEmbed(ifr, msg.stateKey, msg.state);
       } else {
         if (typeof console !== 'undefined') console.log('[Sooty content] 找不到陪伴 iframe，無法轉發 stateKey=' + msg.stateKey);
       }
