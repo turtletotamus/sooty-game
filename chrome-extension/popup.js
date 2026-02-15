@@ -87,4 +87,14 @@ window.addEventListener('message', function (e) {
       });
     }
   }
+  if (e.data.type === 'SOOTY_STATE_SYNC' && e.data.stateKey && e.data.state) {
+    chrome.tabs.query({}, function (tabs) {
+      var payload = { type: 'SOOTY_STATE_SYNC', stateKey: e.data.stateKey, state: e.data.state };
+      tabs.forEach(function (t) {
+        if (t.id && t.url && t.url.indexOf('chrome://') !== 0) {
+          chrome.tabs.sendMessage(t.id, payload).catch(function () {});
+        }
+      });
+    });
+  }
 });

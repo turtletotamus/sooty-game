@@ -342,6 +342,17 @@
   }
 
   chrome.runtime.onMessage.addListener(function (msg) {
+    if (msg && typeof msg === 'object' && msg.type === 'SOOTY_STATE_SYNC' && msg.stateKey && msg.state) {
+      var el = getContainer();
+      var ifr = el && el.querySelector('iframe');
+      if (ifr && ifr.contentWindow) {
+        try {
+          var origin = new URL(EMBED_URL).origin;
+          ifr.contentWindow.postMessage({ type: 'SOOTY_STATE_SYNC', stateKey: msg.stateKey, state: msg.state }, origin);
+        } catch (_) {}
+      }
+      return;
+    }
     if (typeof console !== 'undefined' && (msg === 'showCompanion' || msg === 'hideCompanion')) {
       console.log('[Sooty] content script 收到:', msg);
       if (msg === 'hideCompanion') {

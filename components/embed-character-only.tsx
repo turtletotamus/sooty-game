@@ -145,6 +145,26 @@ export function EmbedCharacterOnly() {
     };
   }, [stateKey, debug, log]);
 
+  // 擴充中繼：主視窗 → popup → content script → embed，不依賴 BroadcastChannel 跨視窗
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type !== "SOOTY_STATE_SYNC" || e.data?.stateKey !== stateKey || !e.data?.state) return;
+      try {
+        const next = e.data.state as SavedState;
+        setState(next);
+        if (typeof console !== "undefined") {
+          const emotion = getEmotionFromState(next, Date.now());
+          console.log("[Sooty 陪伴] 從擴充中繼收到 state，已更新表情 emotion=" + emotion + " hunger=" + (next.petState?.hunger ?? "?"));
+        }
+        if (debug) log("postMessage(擴充中繼) → 已更新 state", "emotion:", getEmotionFromState(next, Date.now()));
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [stateKey, debug, log]);
+
   // 與主視窗同一份 state：每 500ms 唯讀輪詢；過期資料不採用，避免陪伴顯示衰減成生氣/難過
   useEffect(() => {
     const t = setInterval(() => {

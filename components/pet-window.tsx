@@ -257,6 +257,20 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
     if (typeof window !== "undefined" && window.self !== window.top && sootyId) {
       try {
         window.parent.postMessage({ type: "SOOTY_APPEARANCE", sootyId, appearance }, "*");
+        // 經由擴充 popup → content script → 陪伴 iframe 傳 state，不依賴 BroadcastChannel 跨視窗
+        const payload = {
+          type: "SOOTY_STATE_SYNC",
+          stateKey,
+          state: {
+            petName,
+            age,
+            petState,
+            appearance,
+            lastSavedAt: now,
+            lastInteractionTime,
+          },
+        };
+        window.parent.postMessage(payload, "*");
       } catch (_) {}
     }
   }, [stateKey, petName, age, petState, appearance, lastInteractionTime, sootyId]);
