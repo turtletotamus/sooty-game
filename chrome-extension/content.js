@@ -255,12 +255,24 @@
         syncHandlePosition();
       });
 
-      window.addEventListener('mouseup', function () {
+      window.addEventListener('mouseup', function (e) {
         if (!dragging) return;
+        var dx = e.clientX - startX;
+        var dy = e.clientY - startY;
+        var moveDist = Math.sqrt(dx * dx + dy * dy);
         dragging = false;
         var rect = wrap.getBoundingClientRect();
         chrome.storage.local.set({ [COMPANION_POSITION_KEY]: { left: rect.left, top: rect.top } });
         syncHandlePosition();
+        if (moveDist < 8) {
+          try {
+            var ifr = wrap.querySelector('iframe');
+            if (ifr && ifr.contentWindow) {
+              var origin = new URL(EMBED_URL).origin;
+              ifr.contentWindow.postMessage({ type: 'COMPANION_TAP' }, origin);
+            }
+          } catch (_) {}
+        }
       });
     })();
 
@@ -285,8 +297,16 @@
     var el = getContainer();
     var handleEl = getHandle();
     if (el) {
+      el.style.visibility = '';
+      el.style.opacity = '';
+      el.style.transition = '';
       el.style.display = 'flex';
-      if (handleEl) handleEl.style.display = '';
+      if (handleEl) {
+        handleEl.style.visibility = '';
+        handleEl.style.opacity = '';
+        handleEl.style.transition = '';
+        handleEl.style.display = '';
+      }
       chrome.storage.local.get([COMPANION_POSITION_KEY], function (r) {
         applyPosition(el, r[COMPANION_POSITION_KEY]);
         requestAnimationFrame(function () { syncHandlePosition(); });
@@ -306,8 +326,18 @@
   function hideCompanion() {
     var el = getContainer();
     var handleEl = getHandle();
-    if (el) el.style.display = 'none';
-    if (handleEl) handleEl.style.display = 'none';
+    if (el) {
+      el.style.visibility = 'hidden';
+      el.style.opacity = '0';
+      el.style.transition = 'none';
+      el.style.display = 'none';
+    }
+    if (handleEl) {
+      handleEl.style.visibility = 'hidden';
+      handleEl.style.opacity = '0';
+      handleEl.style.transition = 'none';
+      handleEl.style.display = 'none';
+    }
     chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: false });
   }
 

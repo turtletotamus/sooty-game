@@ -73,16 +73,13 @@ export function EmbedCharacterOnly() {
     setState(loaded ?? DEFAULT_SAVED_STATE);
   }, [stateKey]);
 
-  // 主視窗寫入 localStorage 時（同 origin 另一 tab/iframe）立即同步情緒與狀態，不必等 30 秒
+  // 主視窗寫入 localStorage 時（同 origin 另一 tab/iframe）立即同步，必用 loadState 重讀避免漏接
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== stateKey || e.newValue == null) return;
       try {
-        const data = JSON.parse(e.newValue) as unknown;
-        if (data && typeof data === "object" && "petState" in data && "lastInteractionTime" in data) {
-          const loaded = loadState(stateKey);
-          if (loaded) setState(loaded);
-        }
+        const loaded = loadState(stateKey);
+        if (loaded) setState(loaded);
       } catch {
         // ignore
       }
@@ -91,7 +88,7 @@ export function EmbedCharacterOnly() {
     return () => window.removeEventListener("storage", onStorage);
   }, [stateKey]);
 
-  // 與主視窗同一份 state：每 1 秒從 storage 讀取並寫回，情緒與主視窗完全同步（含 lastInteractionTime）
+  // 與主視窗同一份 state：每 500ms 唯讀輪詢（不寫回，避免覆蓋主視窗剛寫入的狀態）
   useEffect(() => {
     const t = setInterval(() => {
       const loaded = loadState(stateKey);
@@ -110,8 +107,7 @@ export function EmbedCharacterOnly() {
         }
         return prev;
       });
-      saveState(stateKey, { ...loaded, lastSavedAt: Date.now() });
-    }, 1000);
+    }, 500);
     return () => clearInterval(t);
   }, [stateKey]);
 

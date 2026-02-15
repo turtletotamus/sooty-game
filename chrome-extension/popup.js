@@ -57,15 +57,15 @@ window.addEventListener('message', function (e) {
     });
   }
   if (e.data.type === 'CLOSE_COMPANION') {
+    chrome.tabs.query({}, function (tabs) {
+      tabs.forEach(function (t) {
+        if (t.id && t.url && t.url.indexOf('chrome://') !== 0) {
+          chrome.tabs.sendMessage(t.id, 'hideCompanion').catch(function () {});
+        }
+      });
+    });
     chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: false }, function () {
       try { sootyFrame.contentWindow.postMessage({ type: 'COMPANION_STATE', visible: false }, '*'); } catch (_) {}
-      chrome.tabs.query({}, function (tabs) {
-        tabs.forEach(function (t) {
-          if (t.id && t.url && t.url.indexOf('chrome://') !== 0) {
-            chrome.tabs.sendMessage(t.id, 'hideCompanion').catch(function () {});
-          }
-        });
-      });
     });
   }
   if (e.data.type === 'SOOTY_APPEARANCE' && e.data.appearance) {
