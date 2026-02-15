@@ -17,7 +17,7 @@ import { useLanguage } from "@/components/language-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Heart, Droplets, Zap, Sparkles, Cookie, Pencil, Check, Settings, Shirt, LayoutGrid } from "lucide-react";
+import { Heart, Droplets, Zap, Sparkles, Cookie, Pencil, Check, Settings, Shirt, LayoutGrid, FlaskConical } from "lucide-react";
 import { WhiteNoiseControl } from "@/components/white-noise-control";
 import type { SootAppearance } from "@/components/soot-sprite";
 import { getSizeMultiplier, SOOT_BASE_SIZE } from "@/components/soot-sprite";
@@ -173,6 +173,8 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [showFloatingWidget, setShowFloatingWidget] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showTestStatsPanel, setShowTestStatsPanel] = useState(false);
+  const [testStats, setTestStats] = useState<PetState>({ hunger: 80, thirst: 85, happiness: 90, energy: 95 });
   const [companionVisible, setCompanionVisible] = useState(() =>
     typeof window !== "undefined" ? (searchParams?.get?.("companionVisible") === "1") : false
   );
@@ -270,6 +272,12 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
         setIsCustomizerOpen(false);
         return;
       }
+      if (showTestStatsPanel) {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowTestStatsPanel(false);
+        return;
+      }
       if (showSettingsMenu) {
         e.preventDefault();
         e.stopPropagation();
@@ -289,7 +297,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
     };
     document.addEventListener("keydown", handleKeyDown, true);
     return () => document.removeEventListener("keydown", handleKeyDown, true);
-  }, [isPomodoroOpen, isBreathingOpen, isCustomizerOpen, showSettingsMenu, isWalking, isInPopup]);
+  }, [isPomodoroOpen, isBreathingOpen, isCustomizerOpen, showSettingsMenu, showTestStatsPanel, isWalking, isInPopup]);
 
   // 不再一打開就顯示「想你了」；僅在「離開超過 5 分鐘後回來」時顯示
   useEffect(() => {
@@ -720,6 +728,10 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
                     <LayoutGrid className="w-4 h-4" />
                     <span>{t("petWindow.widget")}</span>
                   </button>
+                  <button type="button" className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted rounded-none" onClick={() => { setTestStats({ ...petState }); setShowTestStatsPanel(true); setShowSettingsMenu(false); }}>
+                    <FlaskConical className="w-4 h-4 text-muted-foreground" />
+                    <span>{t("petWindow.testStatsLabel")}</span>
+                  </button>
                   <div className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted" onClick={(e) => e.stopPropagation()}>
                     <LanguageToggle />
                   </div>
@@ -1072,6 +1084,90 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
               saveWidgetVisible(false);
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* 測試數值面板：直接修改飢餓/口渴/幸福/精力 */}
+      <AnimatePresence>
+        {showTestStatsPanel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={() => setShowTestStatsPanel(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-card border border-border rounded-lg shadow-lg p-4 w-full max-w-xs flex flex-col gap-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-sm font-medium border-b border-border/50 pb-2">{t("petWindow.testStatsLabel")}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-xs text-muted-foreground flex flex-col gap-1">
+                  {t("petWindow.hunger")}
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={testStats.hunger}
+                    onChange={(e) => setTestStats((s) => ({ ...s, hunger: Math.max(0, Math.min(100, Number(e.target.value) || 0)) }))}
+                    className="h-8 text-sm"
+                  />
+                </label>
+                <label className="text-xs text-muted-foreground flex flex-col gap-1">
+                  {t("petWindow.thirst")}
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={testStats.thirst}
+                    onChange={(e) => setTestStats((s) => ({ ...s, thirst: Math.max(0, Math.min(100, Number(e.target.value) || 0)) }))}
+                    className="h-8 text-sm"
+                  />
+                </label>
+                <label className="text-xs text-muted-foreground flex flex-col gap-1">
+                  {t("petWindow.happiness")}
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={testStats.happiness}
+                    onChange={(e) => setTestStats((s) => ({ ...s, happiness: Math.max(0, Math.min(100, Number(e.target.value) || 0)) }))}
+                    className="h-8 text-sm"
+                  />
+                </label>
+                <label className="text-xs text-muted-foreground flex flex-col gap-1">
+                  {t("petWindow.energy")}
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={testStats.energy}
+                    onChange={(e) => setTestStats((s) => ({ ...s, energy: Math.max(0, Math.min(100, Number(e.target.value) || 0)) }))}
+                    className="h-8 text-sm"
+                  />
+                </label>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" size="sm" onClick={() => setShowTestStatsPanel(false)}>
+                  {t("petWindow.cancel")}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setPetState(testStats);
+                    setLastInteractionTime(Date.now());
+                    setShowTestStatsPanel(false);
+                  }}
+                >
+                  {t("petWindow.testStatsApply")}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

@@ -33,6 +33,9 @@ export const translations: Record<
       darkMode: "Dark mode",
       lightMode: "Day mode",
       appearanceLabel: "Appearance",
+      testStatsLabel: "Test stats",
+      testStatsApply: "Apply",
+      cancel: "Cancel",
     },
     emotion: {
       joy: "Pure Joy",
@@ -166,6 +169,9 @@ export const translations: Record<
       darkMode: "深夜模式",
       lightMode: "白天模式",
       appearanceLabel: "造型",
+      testStatsLabel: "測試數值",
+      testStatsApply: "套用",
+      cancel: "取消",
     },
     emotion: {
       joy: "開心",
