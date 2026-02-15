@@ -88,6 +88,27 @@ export function EmbedCharacterOnly() {
     return () => window.removeEventListener("storage", onStorage);
   }, [stateKey]);
 
+  // 主視窗透過 BroadcastChannel 通知「剛寫入」，陪伴立即重讀（不依賴 storage 事件）
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return;
+    const ch = new BroadcastChannel("sooty-state-sync");
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.stateKey === stateKey) {
+        try {
+          const loaded = loadState(stateKey);
+          if (loaded) setState(loaded);
+        } catch {
+          // ignore
+        }
+      }
+    };
+    ch.addEventListener("message", onMessage);
+    return () => {
+      ch.removeEventListener("message", onMessage);
+      ch.close();
+    };
+  }, [stateKey]);
+
   // 與主視窗同一份 state：每 500ms 唯讀輪詢（不寫回，避免覆蓋主視窗剛寫入的狀態）
   useEffect(() => {
     const t = setInterval(() => {

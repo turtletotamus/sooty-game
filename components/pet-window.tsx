@@ -233,6 +233,13 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
   // Persist progress when key state changes；若在擴充 iframe 內則同步造型給 popup（右下角 embed 用）
   useEffect(() => {
     saveState(stateKey, petName, age, petState, appearance, lastInteractionTime);
+    if (typeof window !== "undefined" && typeof BroadcastChannel !== "undefined") {
+      try {
+        const ch = new BroadcastChannel("sooty-state-sync");
+        ch.postMessage({ stateKey });
+        ch.close();
+      } catch (_) {}
+    }
     if (typeof window !== "undefined" && window.self !== window.top && sootyId) {
       try {
         window.parent.postMessage({ type: "SOOTY_APPEARANCE", sootyId, appearance }, "*");
