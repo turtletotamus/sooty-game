@@ -91,19 +91,27 @@ export function EmbedCharacterOnly() {
     return () => window.removeEventListener("storage", onStorage);
   }, [stateKey]);
 
-  // 與主視窗同一份 state：每 3 秒從 storage 讀取並寫回，減少情緒同步延遲
+  // 與主視窗同一份 state：每 1 秒從 storage 讀取並寫回，情緒與主視窗完全同步（含 lastInteractionTime）
   useEffect(() => {
     const t = setInterval(() => {
       const loaded = loadState(stateKey);
       if (!loaded) return;
       setState((prev) => {
-        if (!prev || prev.lastSavedAt !== loaded.lastSavedAt || prev.petState.hunger !== loaded.petState.hunger || prev.petState.thirst !== loaded.petState.thirst || prev.petState.happiness !== loaded.petState.happiness || prev.petState.energy !== loaded.petState.energy) {
+        if (
+          !prev ||
+          prev.lastSavedAt !== loaded.lastSavedAt ||
+          prev.lastInteractionTime !== loaded.lastInteractionTime ||
+          prev.petState.hunger !== loaded.petState.hunger ||
+          prev.petState.thirst !== loaded.petState.thirst ||
+          prev.petState.happiness !== loaded.petState.happiness ||
+          prev.petState.energy !== loaded.petState.energy
+        ) {
           return loaded;
         }
         return prev;
       });
       saveState(stateKey, { ...loaded, lastSavedAt: Date.now() });
-    }, 3000);
+    }, 1000);
     return () => clearInterval(t);
   }, [stateKey]);
 

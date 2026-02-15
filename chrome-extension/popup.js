@@ -40,18 +40,18 @@ window.addEventListener('message', function (e) {
   if (!e.data || !e.data.type) return;
   if (e.data.type === 'OPEN_COMPANION') {
     chrome.storage.local.set({ [COMPANION_VISIBLE_KEY]: true }, function () {
+      try { sootyFrame.contentWindow.postMessage({ type: 'COMPANION_STATE', visible: true }, '*'); } catch (_) {}
       getActiveBrowserTab(function (tab) {
-        if (!tab) { window.close(); return; }
-        function showCompanionAndClose() {
+        if (!tab) return;
+        function showCompanionOnly() {
           chrome.tabs.sendMessage(tab.id, 'showCompanion').catch(function () {});
-          window.close();
         }
         if (chrome.scripting && typeof chrome.scripting.executeScript === 'function') {
           chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['config.js', 'content.js'] }).catch(function () {}).then(function () {
-            setTimeout(showCompanionAndClose, 150);
+            setTimeout(showCompanionOnly, 150);
           });
         } else {
-          setTimeout(showCompanionAndClose, 80);
+          setTimeout(showCompanionOnly, 80);
         }
       });
     });
