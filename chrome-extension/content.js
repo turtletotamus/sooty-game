@@ -342,14 +342,29 @@
   }
 
   chrome.runtime.onMessage.addListener(function (msg) {
+    if (typeof console !== 'undefined' && (msg === 'showCompanion' || msg === 'hideCompanion')) {
+      console.log('[Sooty] content script 收到:', msg);
+      if (msg === 'hideCompanion') {
+        console.log('[Sooty 測試] 你找對地方了！關閉陪伴時這裡會出現這句話（本分頁的 Console，top）');
+      }
+      if (msg === 'showCompanion') {
+        console.log('[Sooty 測試] 你找對地方了！開啟陪伴時這裡會出現這句話（本分頁的 Console，top）');
+      }
+    }
     if (msg === 'showCompanion') showCompanion();
     if (msg === 'hideCompanion') hideCompanion();
   });
 
   chrome.storage.onChanged.addListener(function (changes, areaName) {
     if (areaName !== 'local' || !changes[COMPANION_VISIBLE_KEY]) return;
-    if (changes[COMPANION_VISIBLE_KEY].newValue === true) showCompanion();
-    if (changes[COMPANION_VISIBLE_KEY].newValue === false) hideCompanion();
+    if (changes[COMPANION_VISIBLE_KEY].newValue === true) {
+      if (typeof console !== 'undefined') console.log('[Sooty 測試] 你找對地方了！開啟陪伴時這裡會出現這句話（本分頁 Console，top）');
+      showCompanion();
+    }
+    if (changes[COMPANION_VISIBLE_KEY].newValue === false) {
+      if (typeof console !== 'undefined') console.log('[Sooty 測試] 你找對地方了！關閉陪伴時這裡會出現這句話（本分頁 Console，top）');
+      hideCompanion();
+    }
   });
 
   function tryShowCompanionIfOn() {

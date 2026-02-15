@@ -156,7 +156,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
   
-  const [lastInteractionTime, setLastInteractionTime] = useState(Date.now());
+  const [lastInteractionTime, setLastInteractionTime] = useState(0);
   const [isPureJoy, setIsPureJoy] = useState(false);
   const [wasWokenUp, setWasWokenUp] = useState(false);
   const [tapTimes, setTapTimes] = useState<number[]>([]);
@@ -217,7 +217,7 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
       setAge(saved.age);
       setPetState(saved.petState);
       setAppearance(saved.appearance);
-      setLastInteractionTime(saved.lastInteractionTime);
+      setLastInteractionTime(saved.lastInteractionTime || Date.now());
       if (typeof window !== "undefined" && window.self !== window.top) {
         try {
           window.parent.postMessage(
@@ -226,6 +226,8 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
           );
         } catch (_) {}
       }
+    } else {
+      setLastInteractionTime(Date.now());
     }
     setShowFloatingWidget(loadWidgetVisible());
   }, [stateKey, sootyId]);

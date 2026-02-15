@@ -25,6 +25,13 @@ export function EmbedCharacterOnly() {
   const sootyId = searchParams?.get?.("sootyId") ?? undefined;
   const stateKey = getStateKey(sootyId);
   const companionSleepingKey = COMPANION_SLEEPING_KEY_PREFIX + stateKey;
+  const debug = searchParams?.get?.("debug") === "1";
+  const log = useCallback(
+    (label: string, ...args: unknown[]) => {
+      if (debug && typeof console !== "undefined") console.log("[Sooty 陪伴]", label, ...args);
+    },
+    [debug]
+  );
   const validShapes: SootShape[] = ["circle", "square", "star", "triangle", "heart"];
   const appearanceFromUrl = (() => {
     const shape = searchParams?.get?.("shape");
@@ -50,6 +57,10 @@ export function EmbedCharacterOnly() {
   const [key, setKey] = useState(0);
   const [externalJumpTrigger, setExternalJumpTrigger] = useState(0);
   const [isCompanionSleeping, setIsCompanionSleeping] = useState(false);
+  const [clientNow, setClientNow] = useState<number | null>(null);
+  useEffect(() => {
+    setClientNow(Date.now());
+  }, []);
 
   const readCompanionSleeping = useCallback(() => {
     if (typeof window === "undefined") return false;
@@ -68,10 +79,18 @@ export function EmbedCharacterOnly() {
     return () => window.removeEventListener("storage", onStorage);
   }, [companionSleepingKey, readCompanionSleeping]);
 
+  // 測試用：embed 一載入就 log，方便使用者確認是否選對 Console 的 iframe
+  useEffect(() => {
+    if (typeof console !== "undefined") {
+      console.log("[Sooty 陪伴 測試] 你找對地方了！這是陪伴 embed 的 Console。當前網址:", window.location.href);
+    }
+  }, []);
+
   useEffect(() => {
     const loaded = loadState(stateKey);
     setState(loaded ?? DEFAULT_SAVED_STATE);
-  }, [stateKey]);
+    if (debug) log("embed 載入", { sootyId, stateKey });
+  }, [stateKey, debug, log]);
 
   // 主視窗寫入 localStorage 時（同 origin 另一 tab/iframe）立即同步，必用 loadState 重讀避免漏接
   useEffect(() => {
@@ -80,34 +99,37 @@ export function EmbedCharacterOnly() {
       try {
         const loaded = loadState(stateKey);
         if (loaded) setState(loaded);
+        if (debug) log("storage 事件 → 已重讀 state");
       } catch {
         // ignore
       }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, [stateKey]);
+  }, [stateKey, debug, log]);
 
   // 主視窗透過 BroadcastChannel 通知「剛寫入」，陪伴立即重讀（不依賴 storage 事件）
   useEffect(() => {
     if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return;
     const ch = new BroadcastChannel("sooty-state-sync");
     const onMessage = (e: MessageEvent) => {
+      if (debug) log("BroadcastChannel 收到", e.data);
       if (e.data?.stateKey === stateKey) {
         try {
           const loaded = loadState(stateKey);
           if (loaded) setState(loaded);
+          if (debug) log("BroadcastChannel → 已重讀 state");
         } catch {
           // ignore
         }
-      }
+      } else if (debug && e.data?.stateKey) log("stateKey 不符", "收到", e.data.stateKey, "我的", stateKey);
     };
     ch.addEventListener("message", onMessage);
     return () => {
       ch.removeEventListener("message", onMessage);
       ch.close();
     };
-  }, [stateKey]);
+  }, [stateKey, debug, log]);
 
   // 與主視窗同一份 state：每 500ms 唯讀輪詢（不寫回，避免覆蓋主視窗剛寫入的狀態）
   useEffect(() => {
@@ -203,7 +225,7 @@ export function EmbedCharacterOnly() {
     );
   }
 
-  const now = Date.now();
+  const now = clientNow ?? state.lastInteractionTime ?? state.lastSavedAt ?? 0;
   const emotion = getEmotionFromState(state, now);
   const mouthDown =
     emotion === "anger" ||

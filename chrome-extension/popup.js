@@ -57,6 +57,7 @@ window.addEventListener('message', function (e) {
     });
   }
   if (e.data.type === 'CLOSE_COMPANION') {
+    if (typeof console !== 'undefined') console.log('[Sooty 測試] popup 已送出關閉陪伴指令（這是「擴充彈出視窗」的 Console；若要看 content script 的 log，請開「有陪伴的那個網頁分頁」的 F12）');
     function sendHideToAllTabs() {
       chrome.tabs.query({}, function (tabs) {
         tabs.forEach(function (t) {
