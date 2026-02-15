@@ -8,13 +8,15 @@ import {
   loadState,
   saveState,
   getEmotionFromState,
+  getFreshDefaultState,
   type SavedState,
-  DEFAULT_SAVED_STATE,
 } from "@/lib/sooty-state";
 import type { SootAppearance, SootShape } from "@/components/soot-sprite";
 
 const MAX_STAT = 100;
 const COMPANION_SLEEPING_KEY_PREFIX = "sooty-companion-sleeping-";
+/** 陪伴與主視窗常在不同 window，localStorage 不共用；超過此時間視為過期，不採用以免顯示衰減成生氣/難過 */
+const COMPANION_STALE_STATE_MS = 2 * 60 * 1000;
 
 /**
  * 右下角陪伴模式：只顯示一隻小黑炭，表情與主視窗一致（同一 state），點擊會跳一下並更新幸福與 lastInteractionTime。
@@ -88,18 +90,23 @@ export function EmbedCharacterOnly() {
 
   useEffect(() => {
     const loaded = loadState(stateKey);
-    setState(loaded ?? DEFAULT_SAVED_STATE);
-    if (debug) log("embed 載入", { sootyId, stateKey });
+    const now = Date.now();
+    const stale = loaded && now - loaded.lastSavedAt > COMPANION_STALE_STATE_MS;
+    setState(!loaded || stale ? getFreshDefaultState() : loaded);
+    if (debug) log("embed 載入", { sootyId, stateKey, stale: !!stale });
   }, [stateKey, debug, log]);
 
-  // 主視窗寫入 localStorage 時（同 origin 另一 tab/iframe）立即同步，必用 loadState 重讀避免漏接
+  // 主視窗寫入 localStorage 時（同 origin 另一 tab/iframe）會觸發 storage；用 e.newValue 取得對方寫入的值（本視窗 localStorage 未變）
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== stateKey || e.newValue == null) return;
       try {
-        const loaded = loadState(stateKey);
-        if (loaded) setState(loaded);
-        if (debug) log("storage 事件 → 已重讀 state");
+        const data = JSON.parse(e.newValue) as Record<string, unknown>;
+        if (data && typeof data === "object" && data.petState && typeof data.petState === "object") {
+          const loaded = data as unknown as SavedState;
+          setState(loaded);
+          if (debug) log("storage 事件 → 已用 e.newValue 更新 state");
+        }
       } catch {
         // ignore
       }
@@ -138,11 +145,13 @@ export function EmbedCharacterOnly() {
     };
   }, [stateKey, debug, log]);
 
-  // 與主視窗同一份 state：每 500ms 唯讀輪詢（不寫回，避免覆蓋主視窗剛寫入的狀態）
+  // 與主視窗同一份 state：每 500ms 唯讀輪詢；過期資料不採用，避免陪伴顯示衰減成生氣/難過
   useEffect(() => {
     const t = setInterval(() => {
       const loaded = loadState(stateKey);
       if (!loaded) return;
+      const now = Date.now();
+      if (now - loaded.lastSavedAt > COMPANION_STALE_STATE_MS) return;
       setState((prev) => {
         if (
           !prev ||

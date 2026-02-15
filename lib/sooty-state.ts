@@ -126,3 +126,16 @@ export const DEFAULT_SAVED_STATE: SavedState = {
   lastSavedAt: Date.now(),
   lastInteractionTime: Date.now(),
 };
+
+/** 陪伴模式用：回傳「剛建立」的預設 state（lastInteractionTime 為現在），避免顯示難過/生氣 */
+export function getFreshDefaultState(): SavedState {
+  const now = Date.now();
+  return {
+    petName: "Sooty",
+    age: 1,
+    petState: { ...DEFAULT_PET_STATE },
+    appearance: { ...DEFAULT_APPEARANCE },
+    lastSavedAt: now,
+    lastInteractionTime: now,
+  };
+}
