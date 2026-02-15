@@ -108,21 +108,28 @@ export function EmbedCharacterOnly() {
     return () => window.removeEventListener("storage", onStorage);
   }, [stateKey, debug, log]);
 
-  // 主視窗透過 BroadcastChannel 通知「剛寫入」，陪伴立即重讀（不依賴 storage 事件）
+  // 主視窗透過 BroadcastChannel 傳完整 state（主視窗與陪伴在不同 window，localStorage 不共用，故直接傳 payload）
   useEffect(() => {
     if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return;
     const ch = new BroadcastChannel("sooty-state-sync");
     const onMessage = (e: MessageEvent) => {
       if (debug) log("BroadcastChannel 收到", e.data);
-      if (e.data?.stateKey === stateKey) {
-        try {
+      if (e.data?.stateKey !== stateKey) {
+        if (debug && e.data?.stateKey) log("stateKey 不符", "收到", e.data.stateKey, "我的", stateKey);
+        return;
+      }
+      try {
+        if (e.data?.state && typeof e.data.state === "object") {
+          setState(e.data.state as SavedState);
+          if (debug) log("BroadcastChannel → 已用訊息內 state 更新");
+        } else {
           const loaded = loadState(stateKey);
           if (loaded) setState(loaded);
           if (debug) log("BroadcastChannel → 已重讀 state");
-        } catch {
-          // ignore
         }
-      } else if (debug && e.data?.stateKey) log("stateKey 不符", "收到", e.data.stateKey, "我的", stateKey);
+      } catch {
+        // ignore
+      }
     };
     ch.addEventListener("message", onMessage);
     return () => {

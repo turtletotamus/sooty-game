@@ -234,11 +234,23 @@ export function PetWindow({ embedMode }: { embedMode?: boolean } = {}) {
 
   // Persist progress when key state changes；若在擴充 iframe 內則同步造型給 popup（右下角 embed 用）
   useEffect(() => {
+    const now = Date.now();
     saveState(stateKey, petName, age, petState, appearance, lastInteractionTime);
     if (typeof window !== "undefined" && typeof BroadcastChannel !== "undefined") {
       try {
         const ch = new BroadcastChannel("sooty-state-sync");
-        ch.postMessage({ stateKey });
+        // 傳完整 state，讓不同視窗的陪伴 iframe 可直接更新（陪伴與主視窗不同 window，localStorage 不共用）
+        ch.postMessage({
+          stateKey,
+          state: {
+            petName,
+            age,
+            petState,
+            appearance,
+            lastSavedAt: now,
+            lastInteractionTime,
+          },
+        });
         ch.close();
       } catch (_) {}
     }
